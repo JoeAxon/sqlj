@@ -77,3 +77,73 @@ func TestInsertAndRetrieve(t *testing.T) {
 		t.Fatalf("Expected 1 users found: %d\n", len(allUsers))
 	}
 }
+
+type Employee struct {
+	ID        uint   `db:"id"`
+	FirstName string `db:"first_name"`
+	LastName  string `db:"last_name"`
+	Email     string `db:"email"`
+	Location  string `db:"location"`
+	Age       uint   `db:"age"`
+}
+
+type EmailAndLocation struct {
+	Email    string `db:"email"`
+	Location string `db:"location"`
+}
+
+func TestPartialRetrieval(t *testing.T) {
+	db, err := sql.Open("sqlite3", ":memory:")
+
+	defer db.Close()
+
+	db.Exec("CREATE TABLE employee (id integer primary key, first_name text, last_name text, email text, location text, age integer)")
+
+	if err != nil {
+		t.Fatalf("Failed to open db: %s\n", err.Error())
+	}
+
+	jdb := DB{
+		DB:           db,
+		SkipOnInsert: []string{"id"},
+	}
+
+	employeeA := Employee{
+		FirstName: "Joe",
+		LastName:  "Smith",
+		Email:     "joe@example.com",
+		Location:  "England",
+		Age:       21,
+	}
+	employeeB := Employee{
+		FirstName: "Jen",
+		LastName:  "Jones",
+		Email:     "jen@example.com",
+		Location:  "Wales",
+		Age:       28,
+	}
+
+	if err := jdb.Insert("employee", &employeeA); err != nil {
+		t.Fatalf("Failed to insert employee: %s\n", err.Error())
+	}
+
+	if err := jdb.Insert("employee", &employeeB); err != nil {
+		t.Fatalf("Failed to insert employee: %s\n", err.Error())
+	}
+
+	emailLocA := EmailAndLocation{}
+
+	if err := jdb.Get("employee", employeeA.ID, &emailLocA); err != nil {
+		t.Fatalf("Failed to get partial employee: %s\n", err.Error())
+	}
+
+	if emailLocA.Email != employeeA.Email || emailLocA.Location != employeeA.Location {
+		t.Fatal("Data mismatch partial employee\n")
+	}
+
+	emailLocs := []EmailAndLocation{}
+
+	if err := jdb.Select("employee", &emailLocs); err != nil {
+		t.Fatalf("Failed to select partial employees: %s\n", err.Error())
+	}
+}

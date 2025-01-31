@@ -27,7 +27,9 @@ func (jdb *DB) Get(table string, id any, v any) error {
 		return err
 	}
 
-	sql := strings.Join([]string{"SELECT * FROM ", table, " WHERE id = $1"}, "")
+	columns := extractColumns(v)
+
+	sql := strings.Join([]string{"SELECT ", strings.Join(columns, ", "), " FROM ", table, " WHERE id = $1"}, "")
 
 	return jdb.GetRow(sql, v, id)
 }
@@ -45,7 +47,20 @@ func (jdb *DB) GetRow(sql string, v any, values ...any) error {
 // The results will be marshalled into the v slice of structs.
 // v must be a pointer to a slice of structs.
 func (jdb *DB) Select(table string, v any) error {
-	sql := strings.Join([]string{"SELECT * FROM ", table}, "")
+	val := reflect.ValueOf(v)
+	if val.Kind() != reflect.Ptr || val.Elem().Kind() != reflect.Slice {
+		return errors.New("v must be a pointer to a slice of structs")
+	}
+
+	structType := val.Elem().Type().Elem()
+	if structType.Kind() != reflect.Struct {
+		return errors.New("v must be a pointer to a slice of structs")
+	}
+
+	structInstance := reflect.New(structType).Interface()
+	columns := extractColumns(structInstance)
+
+	sql := strings.Join([]string{"SELECT ", strings.Join(columns, ", "), " FROM ", table}, "")
 
 	return jdb.SelectAll(sql, v)
 }
@@ -135,6 +150,18 @@ func scanRowsIntoStructs(rows *sql.Rows, dest interface{}) error {
 	}
 
 	return rows.Err()
+}
+
+func extractColumns(v any) []string {
+	fields := extractFields(v, []string{})
+
+	columns := make([]string, len(fields))
+
+	for idx, f := range fields {
+		columns[idx] = f.Name
+	}
+
+	return columns
 }
 
 func extractFields(v any, skipColumns []string) []field {
