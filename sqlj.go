@@ -86,7 +86,8 @@ func (jdb *DB) Insert(table string, v any) error {
 	}
 
 	fields := extractFields(v, jdb.SkipOnInsert)
-	sql := buildInsertSQL(table, fields)
+	columns := extractColumns(v)
+	sql := buildInsertSQL(table, fields, columns)
 
 	values := make([]any, len(fields))
 	for idx, f := range fields {
@@ -191,7 +192,7 @@ func extractFields(v any, skipColumns []string) []field {
 	return fields[:n]
 }
 
-func buildInsertSQL(table string, fields []field) string {
+func buildInsertSQL(table string, fields []field, columns []string) string {
 	names := make([]string, len(fields))
 	placeholders := make([]string, len(fields))
 
@@ -208,7 +209,8 @@ func buildInsertSQL(table string, fields []field) string {
 			strings.Join(names, ", "),
 			") VALUES (",
 			strings.Join(placeholders, ", "),
-			") RETURNING *",
+			") RETURNING ",
+			strings.Join(columns, ", "),
 		},
 		"",
 	)

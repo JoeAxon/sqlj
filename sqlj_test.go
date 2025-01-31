@@ -92,6 +92,11 @@ type EmailAndLocation struct {
 	Location string `db:"location"`
 }
 
+type EmployeeShort struct {
+	ID    uint   `db:"id"`
+	Email string `db:"email"`
+}
+
 func TestPartialRetrieval(t *testing.T) {
 	db, err := sql.Open("sqlite3", ":memory:")
 
@@ -145,5 +150,13 @@ func TestPartialRetrieval(t *testing.T) {
 
 	if err := jdb.Select("employee", &emailLocs); err != nil {
 		t.Fatalf("Failed to select partial employees: %s\n", err.Error())
+	}
+
+	shortEmployee := EmployeeShort{
+		Email: "jon@example.com",
+	}
+
+	if err := jdb.Insert("employee", &shortEmployee); err != nil {
+		t.Fatalf("Failed to insert short employee: %s\n", err.Error())
 	}
 }
