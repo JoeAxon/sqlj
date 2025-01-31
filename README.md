@@ -13,6 +13,6 @@ A simple struct to record mapper. Builds on top of the database/sql standard lib
 - [x] `Select`
 - [x] `SelectAll`
 - [x] `Insert`
-- [ ] `Update`
+- [x] `Update`
 - [x] `Delete`
 - [ ] Support for transactions

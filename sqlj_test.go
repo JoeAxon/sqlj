@@ -76,6 +76,22 @@ func TestInsertAndRetrieve(t *testing.T) {
 	if len(allUsers) != 1 {
 		t.Fatalf("Expected 1 users found: %d\n", len(allUsers))
 	}
+
+	userB.Email = "jack@example.com"
+
+	if err := jdb.Update("user", userB.ID, &userB); err != nil {
+		t.Fatalf("Failed to update user: %s\n", err.Error())
+	}
+
+	jackUser := User{}
+
+	if err := jdb.Get("user", userB.ID, &jackUser); err != nil {
+		t.Fatalf("Failed to get updated user: %s\n", err.Error())
+	}
+
+	if jackUser.Email != "jack@example.com" {
+		t.Fatalf("User email did not update")
+	}
 }
 
 type Employee struct {

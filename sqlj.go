@@ -79,6 +79,7 @@ func (jdb *DB) SelectAll(sql string, v any, values ...any) error {
 }
 
 // Inserts a row into the specified `table` with the given struct.
+// The new row is returned and marshalled into v.
 // v must be a pointer to a struct.
 func (jdb *DB) Insert(table string, v any) error {
 	if err := checkValueType(v); err != nil {
@@ -93,6 +94,28 @@ func (jdb *DB) Insert(table string, v any) error {
 	for idx, f := range fields {
 		values[idx] = f.Value
 	}
+
+	return jdb.GetRow(sql, v, values...)
+}
+
+// Updates a row in the specified `table` using the given struct.
+// The updated row is returned and marshalled into v.
+// v must be a pointer to a struct.
+func (jdb *DB) Update(table string, id any, v any) error {
+	if err := checkValueType(v); err != nil {
+		return err
+	}
+
+	fields := extractFields(v, jdb.SkipOnInsert)
+	columns := extractColumns(v)
+	sql := buildUpdateSQL(table, fields, columns)
+
+	values := make([]any, len(fields))
+	for idx, f := range fields {
+		values[idx] = f.Value
+	}
+
+	values = append(values, id)
 
 	return jdb.GetRow(sql, v, values...)
 }
@@ -210,6 +233,26 @@ func buildInsertSQL(table string, fields []field, columns []string) string {
 			") VALUES (",
 			strings.Join(placeholders, ", "),
 			") RETURNING ",
+			strings.Join(columns, ", "),
+		},
+		"",
+	)
+}
+
+func buildUpdateSQL(table string, fields []field, columns []string) string {
+	setExpressions := make([]string, len(fields))
+	for idx, f := range fields {
+		setExpressions[idx] = fmt.Sprintf("%s = %s", f.Name, f.Placeholder)
+	}
+
+	return strings.Join(
+		[]string{
+			"UPDATE ",
+			table,
+			" SET ",
+			strings.Join(setExpressions, ", "),
+			fmt.Sprintf(" WHERE id = $%d ", len(fields)),
+			"RETURNING ",
 			strings.Join(columns, ", "),
 		},
 		"",
