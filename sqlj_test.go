@@ -176,3 +176,49 @@ func TestPartialRetrieval(t *testing.T) {
 		t.Fatalf("Failed to insert short employee: %s\n", err.Error())
 	}
 }
+
+func TestTransaction(t *testing.T) {
+	db, err := sql.Open("sqlite3", ":memory:")
+
+	defer db.Close()
+
+	db.Exec("CREATE TABLE user (id integer primary key, name text, email text)")
+
+	if err != nil {
+		t.Fatalf("Failed to open db: %s\n", err.Error())
+	}
+
+	tx, err := db.Begin()
+
+	if err != nil {
+		t.Fatalf("Failed to start transaction: %s\n", err.Error())
+	}
+
+	jdb := DB{
+		DB:           tx,
+		SkipOnInsert: []string{"id"},
+	}
+
+	user := User{
+		Name:  "Jess",
+		Email: "jess@example.com",
+	}
+
+	if err := jdb.Insert("user", &user); err != nil {
+		t.Fatalf("Failed to insert user: %s\n", err.Error())
+	}
+
+	if err := tx.Commit(); err != nil {
+		t.Fatalf("Failed to commit: %s\n", err.Error())
+	}
+
+	jdb = DB{
+		DB: db,
+	}
+
+	foundUser := User{}
+
+	if err := jdb.Get("user", user.ID, &foundUser); err != nil {
+		t.Fatalf("Failed to retrieve user: %s\n", err.Error())
+	}
+}

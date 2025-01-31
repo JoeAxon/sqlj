@@ -9,8 +9,14 @@ import (
 	"strings"
 )
 
+type DBLike interface {
+	Exec(query string, args ...any) (sql.Result, error)
+	Query(query string, args ...any) (*sql.Rows, error)
+	QueryRow(query string, args ...any) *sql.Row
+}
+
 type DB struct {
-	DB           *sql.DB
+	DB           DBLike
 	SkipOnInsert []string // Allows you specify db field names to skip on insert
 }
 
