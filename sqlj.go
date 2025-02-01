@@ -9,15 +9,17 @@ import (
 	"strings"
 )
 
+type DB struct {
+	DB           DBLike
+	SkipOnInsert []string // Allows you specify db field names to skip on insert
+}
+
+// Represents a DB-like interface. This only specifies the methods used by sqlj.
+// Both DB and Tx in the database/sql standard library fulfill this contract.
 type DBLike interface {
 	Exec(query string, args ...any) (sql.Result, error)
 	Query(query string, args ...any) (*sql.Rows, error)
 	QueryRow(query string, args ...any) *sql.Row
-}
-
-type DB struct {
-	DB           DBLike
-	SkipOnInsert []string // Allows you specify db field names to skip on insert
 }
 
 // Gets a single row from the given table with the given id.

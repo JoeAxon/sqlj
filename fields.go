@@ -5,9 +5,13 @@ import "fmt"
 type Field interface {
 	GetName() string
 	GetValue() any
+
+	// For an insert this is the $1 in the VALUES list.
+	// For an update this is the $1 in the SET expression.
 	GetPlaceholder(idx int) string
 }
 
+// This is a standard k = v field
 type BasicField struct {
 	Name  string
 	Value any
@@ -25,6 +29,8 @@ func (f BasicField) GetPlaceholder(idx int) string {
 	return fmt.Sprintf("$%d", idx)
 }
 
+// This is useful if you want to call a function.
+// An example would be LiteralField{Name: "created_at", Value: "now()"}.
 type LiteralField struct {
 	Name  string
 	Value string
