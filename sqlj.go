@@ -118,13 +118,24 @@ func (jdb *DB) InsertWithOptions(table string, options Options, v any) error {
 // The updated row is returned and marshalled into v.
 // v must be a pointer to a struct.
 func (jdb *DB) Update(table string, id any, v any) error {
+	return jdb.UpdateWithOptions(table, id, Options{}, v)
+}
+
+// Updates a row in the specified `table` using the given struct.
+// The updated row is returned and marshalled into v.
+// An Options type with a slice of Fields can be included to override any values in v.
+// v must be a pointer to a struct.
+func (jdb *DB) UpdateWithOptions(table string, id any, options Options, v any) error {
 	if err := checkValueType(v); err != nil {
 		return err
 	}
 
-	fields := extractFields(v)
+	allFields := extractFields(v)
+	fields := append(allFields, options.Fields...)
+	fields = dedupeFields(fields)
+
 	filteredFields := filterFields(fields, jdb.SkipOnInsert)
-	returnColumns := pluckNames(fields)
+	returnColumns := pluckNames(allFields)
 
 	sql := buildUpdateSQL(table, filteredFields, returnColumns)
 
@@ -188,28 +199,6 @@ func scanRowsIntoStructs(rows *sql.Rows, dest interface{}) error {
 	}
 
 	return rows.Err()
-}
-
-func pluckNames(fields []Field) []string {
-	names := make([]string, len(fields))
-
-	for idx, f := range fields {
-		names[idx] = f.GetName()
-	}
-
-	return names
-}
-
-func pluckValues(fields []Field) []any {
-	values := make([]any, len(fields))
-
-	for idx, f := range fields {
-		if v := f.GetValue(); v != nil {
-			values[idx] = v
-		}
-	}
-
-	return values
 }
 
 // TODO: Rewrite this so it's deterministic. Currently the order the fields is changed.

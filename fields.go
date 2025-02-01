@@ -41,3 +41,25 @@ func (f LiteralField) GetValue() any {
 func (f LiteralField) GetPlaceholder(idx int) string {
 	return f.Value
 }
+
+func pluckNames(fields []Field) []string {
+	names := make([]string, len(fields))
+
+	for idx, f := range fields {
+		names[idx] = f.GetName()
+	}
+
+	return names
+}
+
+func pluckValues(fields []Field) []any {
+	values := make([]any, len(fields))
+
+	for idx, f := range fields {
+		if v := f.GetValue(); v != nil {
+			values[idx] = v
+		}
+	}
+
+	return values
+}
