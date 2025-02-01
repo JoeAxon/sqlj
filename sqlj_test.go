@@ -3,14 +3,16 @@ package sqlj
 import (
 	"database/sql"
 	"testing"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
 type User struct {
-	ID    uint   `db:"id"`
-	Name  string `db:"name"`
-	Email string `db:"email"`
+	ID        uint      `db:"id"`
+	Name      string    `db:"name"`
+	Email     string    `db:"email"`
+	CreatedAt time.Time `db:"created_at"`
 }
 
 func TestInsertAndRetrieve(t *testing.T) {
@@ -18,7 +20,7 @@ func TestInsertAndRetrieve(t *testing.T) {
 
 	defer db.Close()
 
-	db.Exec("CREATE TABLE user (id integer primary key, name text, email text)")
+	db.Exec("CREATE TABLE user (id integer primary key, name text, email text, created_at timestamp)")
 
 	if err != nil {
 		t.Fatalf("Failed to open db: %s\n", err.Error())
@@ -182,7 +184,7 @@ func TestTransaction(t *testing.T) {
 
 	defer db.Close()
 
-	db.Exec("CREATE TABLE user (id integer primary key, name text, email text)")
+	db.Exec("CREATE TABLE user (id integer primary key, name text, email text, created_at timestamp)")
 
 	if err != nil {
 		t.Fatalf("Failed to open db: %s\n", err.Error())
@@ -217,6 +219,64 @@ func TestTransaction(t *testing.T) {
 	}
 
 	foundUser := User{}
+
+	if err := jdb.Get("user", user.ID, &foundUser); err != nil {
+		t.Fatalf("Failed to retrieve user: %s\n", err.Error())
+	}
+}
+
+func TestInsertWithOptions(t *testing.T) {
+	db, err := sql.Open("sqlite3", ":memory:")
+
+	defer db.Close()
+
+	db.Exec("CREATE TABLE user (id integer primary key, name text, email text, created_at timestamp)")
+
+	if err != nil {
+		t.Fatalf("Failed to open db: %s\n", err.Error())
+	}
+
+	jdb := DB{
+		DB:           db,
+		SkipOnInsert: []string{"id"},
+	}
+
+	user := User{
+		Name:  "Jess",
+		Email: "jess@example.com",
+	}
+
+	if err := jdb.InsertWithOptions("user", Options{
+		Fields: []Field{
+			BasicField{
+				Name:  "name",
+				Value: "Jon",
+			},
+		},
+	}, &user); err != nil {
+		t.Fatalf("Failed to insert user: %s\n", err.Error())
+	}
+
+	if user.Name != "Jon" {
+		t.Fatalf("Expected user.Name to \"Jon\". Got: %s\n", user.Name)
+	}
+
+	foundUser := User{}
+
+	if err := jdb.Get("user", user.ID, &foundUser); err != nil {
+		t.Fatalf("Failed to retrieve user: %s\n", err.Error())
+	}
+
+	if err := jdb.InsertWithOptions("user", Options{
+		Fields: []Field{
+			LiteralField{
+				Name:  "created_at",
+				Value: "date()",
+			},
+		},
+	}, &user); err != nil {
+		t.Fatalf("Failed to insert user: %s\n", err.Error())
+	}
 
 	if err := jdb.Get("user", user.ID, &foundUser); err != nil {
 		t.Fatalf("Failed to retrieve user: %s\n", err.Error())

@@ -80,17 +80,32 @@ func (jdb *DB) SelectAll(sql string, v any, values ...any) error {
 	return scanRowsIntoStructs(rows, v)
 }
 
+type Options struct {
+	Fields []Field
+}
+
 // Inserts a row into the specified `table` with the given struct.
 // The new row is returned and marshalled into v.
 // v must be a pointer to a struct.
 func (jdb *DB) Insert(table string, v any) error {
+	return jdb.InsertWithOptions(table, Options{}, v)
+}
+
+// Inserts a row into the specified `table` with the given struct.
+// The new row is returned and marshalled into v.
+// An Options type with a slice of Fields can be included to override any values in v.
+// v must be a pointer to a struct.
+func (jdb *DB) InsertWithOptions(table string, options Options, v any) error {
 	if err := checkValueType(v); err != nil {
 		return err
 	}
 
-	fields := extractFields(v)
+	allFields := extractFields(v)
+	fields := append(allFields, options.Fields...)
+	fields = dedupeFields(fields)
+
 	filteredFields := filterFields(fields, jdb.SkipOnInsert)
-	returnColumns := pluckNames(fields)
+	returnColumns := pluckNames(allFields)
 
 	sql := buildInsertSQL(table, filteredFields, returnColumns)
 
@@ -189,10 +204,31 @@ func pluckValues(fields []Field) []any {
 	values := make([]any, len(fields))
 
 	for idx, f := range fields {
-		values[idx] = f.GetValue() // TODO: deal with null
+		if v := f.GetValue(); v != nil {
+			values[idx] = v
+		}
 	}
 
 	return values
+}
+
+// TODO: Rewrite this so it's deterministic. Currently the order the fields is changed.
+func dedupeFields(fields []Field) []Field {
+	indexedFields := make(map[string]Field)
+
+	for _, f := range fields {
+		indexedFields[f.GetName()] = f
+	}
+
+	allFields := make([]Field, len(indexedFields))
+
+	n := 0
+	for _, v := range indexedFields {
+		allFields[n] = v
+		n++
+	}
+
+	return allFields
 }
 
 func extractFields(v any) []Field {
