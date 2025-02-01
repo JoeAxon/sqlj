@@ -22,7 +22,7 @@ import (
 	"database/sql"
 
 	_ "github.com/mattn/go-sqlite3"
-    "github.com/JoeAxon/sqlj"
+	"github.com/JoeAxon/sqlj"
 )
 
 // The "db" struct tags specify the column name in the database.
@@ -34,12 +34,12 @@ type User struct {
 }
 
 func main() {
-    // DB setup, this will likely be different for you.
+	// DB setup, this will likely be different for you.
 	db, err := sql.Open("sqlite3", ":memory:")
 	db.Exec("CREATE TABLE users (id integer primary key, name text, email text)")
 	defer db.Close()
 
-    // SkipOnInsert can be omitted
+	// SkipOnInsert can be omitted
 	jdb := DB{
 		DB:           db,
 		SkipOnInsert: []string{"id"},
@@ -47,8 +47,8 @@ func main() {
 
 	user := User{Name: "Joe", Email: "joe@example.com"}
 
-    // .Insert will generate and execute an "INSERT" query on the "users" table using the struct provided.
-    // The newly created user will be unmarshalled into the struct.
+	// .Insert will generate and execute an "INSERT" query on the "users" table using the struct provided.
+	// The newly created user will be unmarshalled into the struct.
 	if err := jdb.Insert("users", &user); err != nil {
 		fmt.Fatalf("Failed to insert user: %s\n", err.Error())
 	}
@@ -59,7 +59,7 @@ func main() {
 		fmt.Fatalf("Failed to retrieve user: %s\n", err.Error())
 	}
 
-    fmt.Println("Found the user: ", foundUser)
+	fmt.Println("Found the user: ", foundUser)
 }
 ```
 
