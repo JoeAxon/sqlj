@@ -21,9 +21,8 @@ type DB struct {
 }
 
 type field struct {
-	Name        string
-	Placeholder string
-	Value       any
+	Name  string
+	Value any
 }
 
 // Gets a single row from the given table with the given id.
@@ -33,7 +32,8 @@ func (jdb *DB) Get(table string, id any, v any) error {
 		return err
 	}
 
-	columns := extractColumns(v)
+	fields := extractFields(v)
+	columns := pluckNames(fields)
 
 	sql := strings.Join([]string{"SELECT ", strings.Join(columns, ", "), " FROM ", table, " WHERE id = $1"}, "")
 
@@ -64,7 +64,8 @@ func (jdb *DB) Select(table string, v any) error {
 	}
 
 	structInstance := reflect.New(structType).Interface()
-	columns := extractColumns(structInstance)
+	fields := extractFields(structInstance)
+	columns := pluckNames(fields)
 
 	sql := strings.Join([]string{"SELECT ", strings.Join(columns, ", "), " FROM ", table}, "")
 
@@ -92,14 +93,13 @@ func (jdb *DB) Insert(table string, v any) error {
 		return err
 	}
 
-	fields := extractFields(v, jdb.SkipOnInsert)
-	columns := extractColumns(v)
-	sql := buildInsertSQL(table, fields, columns)
+	fields := extractFields(v)
+	filteredFields := filterFields(fields, jdb.SkipOnInsert)
+	returnColumns := pluckNames(fields)
 
-	values := make([]any, len(fields))
-	for idx, f := range fields {
-		values[idx] = f.Value
-	}
+	sql := buildInsertSQL(table, filteredFields, returnColumns)
+
+	values := pluckValues(filteredFields)
 
 	return jdb.GetRow(sql, v, values...)
 }
@@ -112,15 +112,13 @@ func (jdb *DB) Update(table string, id any, v any) error {
 		return err
 	}
 
-	fields := extractFields(v, jdb.SkipOnInsert)
-	columns := extractColumns(v)
-	sql := buildUpdateSQL(table, fields, columns)
+	fields := extractFields(v)
+	filteredFields := filterFields(fields, jdb.SkipOnInsert)
+	returnColumns := pluckNames(fields)
 
-	values := make([]any, len(fields))
-	for idx, f := range fields {
-		values[idx] = f.Value
-	}
+	sql := buildUpdateSQL(table, filteredFields, returnColumns)
 
+	values := pluckValues(filteredFields)
 	values = append(values, id)
 
 	return jdb.GetRow(sql, v, values...)
@@ -182,19 +180,27 @@ func scanRowsIntoStructs(rows *sql.Rows, dest interface{}) error {
 	return rows.Err()
 }
 
-func extractColumns(v any) []string {
-	fields := extractFields(v, []string{})
-
-	columns := make([]string, len(fields))
+func pluckNames(fields []field) []string {
+	names := make([]string, len(fields))
 
 	for idx, f := range fields {
-		columns[idx] = f.Name
+		names[idx] = f.Name
 	}
 
-	return columns
+	return names
 }
 
-func extractFields(v any, skipColumns []string) []field {
+func pluckValues(fields []field) []any {
+	values := make([]any, len(fields))
+
+	for idx, f := range fields {
+		values[idx] = f.Value
+	}
+
+	return values
+}
+
+func extractFields(v any) []field {
 	t := reflect.TypeOf(v)
 
 	number_of_fields := t.Elem().NumField()
@@ -206,19 +212,34 @@ func extractFields(v any, skipColumns []string) []field {
 	for i := 0; i < number_of_fields; i++ {
 		dbTag := t.Elem().Field(i).Tag.Get("db")
 
-		if dbTag == "" || dbTag == "-" || slices.Contains(skipColumns, dbTag) {
+		if dbTag == "" || dbTag == "-" {
 			continue
 		}
 
 		fields[n] = field{
-			Name:        dbTag,
-			Placeholder: fmt.Sprintf("$%d", n),
-			Value:       value.Field(i).Addr().Interface(),
+			Name:  dbTag,
+			Value: value.Field(i).Addr().Interface(),
 		}
 		n++
 	}
 
 	return fields[:n]
+}
+
+func filterFields(fields []field, skipColumns []string) []field {
+	outFields := make([]field, len(fields))
+
+	n := 0
+	for _, f := range fields {
+		if slices.Contains(skipColumns, f.Name) {
+			continue
+		}
+
+		outFields[n] = f
+		n++
+	}
+
+	return outFields[:n]
 }
 
 func buildInsertSQL(table string, fields []field, columns []string) string {
@@ -227,7 +248,7 @@ func buildInsertSQL(table string, fields []field, columns []string) string {
 
 	for idx, f := range fields {
 		names[idx] = f.Name
-		placeholders[idx] = f.Placeholder
+		placeholders[idx] = fmt.Sprintf("$%d", idx)
 	}
 
 	return strings.Join(
@@ -248,7 +269,7 @@ func buildInsertSQL(table string, fields []field, columns []string) string {
 func buildUpdateSQL(table string, fields []field, columns []string) string {
 	setExpressions := make([]string, len(fields))
 	for idx, f := range fields {
-		setExpressions[idx] = fmt.Sprintf("%s = %s", f.Name, f.Placeholder)
+		setExpressions[idx] = fmt.Sprintf("%s = $%d", f.Name, idx)
 	}
 
 	return strings.Join(
