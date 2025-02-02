@@ -11,6 +11,7 @@ import (
 
 type DB struct {
 	DB           DBLike
+	IDColumn     string
 	SkipOnInsert []string // Allows you specify db field names to skip on insert
 }
 
@@ -32,7 +33,7 @@ func (jdb *DB) Get(table string, id any, v any) error {
 	fields := extractFields(v)
 	columns := pluckNames(fields)
 
-	sql := strings.Join([]string{"SELECT ", strings.Join(columns, ", "), " FROM ", table, " WHERE id = $1"}, "")
+	sql := strings.Join([]string{"SELECT ", strings.Join(columns, ", "), " FROM ", table, " WHERE ", jdb.GetIDName(), " = $1"}, "")
 
 	return jdb.GetRow(sql, v, id)
 }
@@ -149,13 +150,21 @@ func (jdb *DB) UpdateWithOptions(table string, id any, options Options, v any) e
 
 // Deletes a row in the given table by ID.
 func (jdb *DB) Delete(table string, id any) error {
-	sql := strings.Join([]string{"DELETE FROM ", table, " WHERE id = $1"}, "")
+	sql := strings.Join([]string{"DELETE FROM ", table, " WHERE ", jdb.GetIDName(), " = $1"}, "")
 
 	// TODO: It would be prudent to check RowsAffected() on the result.
 	// I need to look into how this is supports with different DB drivers.
 	_, err := jdb.DB.Exec(sql, id)
 
 	return err
+}
+
+func (jdb *DB) GetIDName() string {
+	if jdb.IDColumn == "" {
+		return "id"
+	}
+
+	return jdb.IDColumn
 }
 
 func scanIntoStruct(row *sql.Row, dest any) error {
