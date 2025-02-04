@@ -83,6 +83,78 @@ func (jdb *DB) SelectAll(sql string, v any, values ...any) error {
 	return scanRowsIntoStructs(rows, v)
 }
 
+type PageOptions struct {
+	pageNumber uint
+	pageSize   uint
+	order      []OrderBy
+}
+
+type OrderBy struct {
+	expression string
+	direction  string
+}
+
+// Selects a page of data from the given table.
+// The options parameter allows you to specify the page, page size and order by clauses.
+// The results will be marshalled into the v slice of structs.
+// v must be a pointer to a slice of structs.
+func (jdb *DB) Page(table string, options PageOptions, v any) error {
+	if options.pageNumber < 1 {
+		return errors.New("Page number must be greater than 0")
+	}
+
+	if options.pageSize < 1 {
+		return errors.New("Page size must be greater than 0")
+	}
+
+	if len(options.order) == 0 {
+		return errors.New("Must include atleast one order by")
+	}
+
+	val := reflect.ValueOf(v)
+	if val.Kind() != reflect.Ptr || val.Elem().Kind() != reflect.Slice {
+		return errors.New("v must be a pointer to a slice of structs")
+	}
+
+	structType := val.Elem().Type().Elem()
+	if structType.Kind() != reflect.Struct {
+		return errors.New("v must be a pointer to a slice of structs")
+	}
+
+	structInstance := reflect.New(structType).Interface()
+	fields := extractFields(structInstance)
+	columns := pluckNames(fields)
+
+	offset := (options.pageNumber - 1) * options.pageSize
+	limit := options.pageSize
+
+	orderByClauses := make([]string, len(options.order))
+
+	for idx, o := range options.order {
+		orderByClauses[idx] = strings.Join([]string{o.expression, o.direction}, " ")
+	}
+
+	sql := strings.Join([]string{"SELECT ", strings.Join(columns, ", "), " FROM ", table, " ORDER BY ", strings.Join(orderByClauses, ", "), " OFFSET $1 LIMIT $2"}, "")
+
+	return jdb.SelectAll(sql, v, offset, limit)
+}
+
+// Counts the number of records in the table.
+// This is intended to be used in conjunction with .Page.
+func (jdb *DB) Count(table string) (uint, error) {
+	var count uint = 0
+
+	sql := strings.Join([]string{"SELECT count(1) FROM ", table}, "")
+
+	result := jdb.DB.QueryRow(sql)
+
+	if err := result.Scan(&count); err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
 type Options struct {
 	Fields []Field
 }
