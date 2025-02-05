@@ -349,9 +349,14 @@ func buildInsertSQL(table string, fields []Field, columns []string) string {
 	names := make([]string, len(fields))
 	placeholders := make([]string, len(fields))
 
+	n := 0
 	for idx, f := range fields {
 		names[idx] = f.GetName()
-		placeholders[idx] = f.GetPlaceholder(idx)
+		placeholders[idx] = f.GetPlaceholder(n)
+
+		if !f.IsLiteral() {
+			n++
+		}
 	}
 
 	return strings.Join(

@@ -9,6 +9,9 @@ type Field interface {
 	// For an insert this is the $1 in the VALUES list.
 	// For an update this is the $1 in the SET expression.
 	GetPlaceholder(idx int) string
+
+	// This isn't ideal but will work for now
+	IsLiteral() bool
 }
 
 // This is a standard k = v field
@@ -29,6 +32,10 @@ func (f BasicField) GetPlaceholder(idx int) string {
 	return fmt.Sprintf("$%d", idx)
 }
 
+func (f BasicField) IsLiteral() bool {
+	return false
+}
+
 // This is useful if you want to call a function.
 // An example would be LiteralField{Name: "created_at", Value: "now()"}.
 type LiteralField struct {
@@ -46,6 +53,10 @@ func (f LiteralField) GetValue() any {
 
 func (f LiteralField) GetPlaceholder(idx int) string {
 	return f.Value
+}
+
+func (f LiteralField) IsLiteral() bool {
+	return true
 }
 
 func pluckNames(fields []Field) []string {
