@@ -1,6 +1,9 @@
 package sqlj
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 type QueryDB struct {
 	DB           DB
@@ -102,6 +105,7 @@ func buildWhereClause(clauses []WhereClause) string {
 
 	sql := make([]string, len(clauses)*2)
 
+	var n uint = 0
 	for idx, clause := range clauses {
 		if idx == 0 {
 			sql[idx*2] = ""
@@ -109,14 +113,31 @@ func buildWhereClause(clauses []WhereClause) string {
 			sql[idx*2] = clause.Type
 		}
 
-		sql[idx*2+1] = clause.Expr.String()
+		expr, replacementCount := replacePlaceholder(clause.Expr.String(), n)
+
+		sql[idx*2+1] = expr
+
+		n += replacementCount
 	}
 
 	return strings.Join(sql[1:], " ")
 }
 
-func replacePlaceholder(expr string, idx uint) (string, uint) {
-	return expr, 0
+func replacePlaceholder(expr string, offset uint) (string, uint) {
+	matches := indexMatches(expr)
+
+	pieces := make([]string, len(matches)*3)
+
+	for idx, match := range matches {
+		left := expr[:match]
+		right := expr[match+1:]
+
+		pieces[idx] = left
+		pieces[idx+1] = fmt.Sprintf("$%d", idx+int(offset))
+		pieces[idx+2] = right
+	}
+
+	return strings.Join(pieces, ""), 0
 }
 
 func indexMatches(expr string) []uint {
@@ -136,7 +157,8 @@ func indexMatches(expr string) []uint {
 			}
 		}
 
-		escaping = expr[i] == '\\'
+		// Pretty sure most SQL implementations escape quotes by doubling up
+		// escaping = expr[i] == '\\'
 	}
 
 	return matches

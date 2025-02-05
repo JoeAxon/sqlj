@@ -84,3 +84,23 @@ func TestIndexMatches(t *testing.T) {
 		t.Fatalf("Expected index 19, got: %d\n", result[0])
 	}
 }
+
+func TestReplacePlaceholder(t *testing.T) {
+	result, replacements := replacePlaceholder("a = b", 0)
+
+	if replacements != 0 && result != "a = b" {
+		t.Fatalf("Expected no replacements, got: %d - %s", replacements, result)
+	}
+
+	result, replacements = replacePlaceholder("a = ?", 0)
+
+	if replacements != 1 && result != "a = $0" {
+		t.Fatalf("Expected 1 replacement, got: %d - %s", replacements, result)
+	}
+
+	result, replacements = replacePlaceholder("name = ?", 3)
+
+	if replacements != 1 && result != "name = $3" {
+		t.Fatalf("Expected 1 replacement, got: %d - %s", replacements, result)
+	}
+}
