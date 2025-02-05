@@ -72,11 +72,13 @@ func pluckNames(fields []Field) []string {
 func pluckValues(fields []Field) []any {
 	values := make([]any, len(fields))
 
-	for idx, f := range fields {
+	n := 0
+	for _, f := range fields {
 		if v := f.GetValue(); v != nil {
-			values[idx] = v
+			values[n] = v
+			n++
 		}
 	}
 
-	return values
+	return values[:n]
 }
