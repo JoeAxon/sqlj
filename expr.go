@@ -114,3 +114,30 @@ func buildWhereClause(clauses []WhereClause) string {
 
 	return strings.Join(sql[1:], " ")
 }
+
+func replacePlaceholder(expr string, idx uint) (string, uint) {
+	return expr, 0
+}
+
+func indexMatches(expr string) []uint {
+	matches := []uint{}
+	inQuote := false
+	escaping := false
+
+	for i := 0; i < len(expr); i++ {
+		switch expr[i] {
+		case '?':
+			if !inQuote {
+				matches = append(matches, uint(i))
+			}
+		case '\'':
+			if !escaping {
+				inQuote = !inQuote
+			}
+		}
+
+		escaping = expr[i] == '\\'
+	}
+
+	return matches
+}
