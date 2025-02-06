@@ -54,11 +54,18 @@ func buildUpdateSQL(table string, fields []Field, columns []string) string {
 	)
 }
 
-func buildSelectQuery(columns []string, from string, whereClauses []WhereClause) string {
-	sql := strings.Join([]string{"SELECT ", strings.Join(columns, ", "), " FROM ", from}, "")
+type Select struct {
+	From    string
+	Columns []string
+	Where   []WhereClause
+	OrderBy []OrderBy
+}
 
-	if len(whereClauses) > 0 {
-		sql = strings.Join([]string{sql, " WHERE ", buildWhereClause(whereClauses)}, "")
+func buildSelectQuery(selectQuery Select) string {
+	sql := strings.Join([]string{"SELECT ", strings.Join(selectQuery.Columns, ", "), " FROM ", selectQuery.From}, "")
+
+	if len(selectQuery.Where) > 0 {
+		sql = strings.Join([]string{sql, " WHERE ", buildWhereClause(selectQuery.Where)}, "")
 	}
 
 	return sql

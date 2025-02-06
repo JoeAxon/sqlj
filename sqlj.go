@@ -3,7 +3,6 @@ package sqlj
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"strings"
 )
 
@@ -31,8 +30,12 @@ func (jdb *DB) Get(table string, id any, v any) error {
 	fields := extractFields(v)
 	columns := pluckNames(fields)
 
-	sql := buildSelectQuery(columns, table, []WhereClause{
-		{"AND", SimpleExpr{fmt.Sprintf("%s = ?", jdb.GetIDName())}},
+	sql := buildSelectQuery(Select{
+		Columns: columns,
+		From:    table,
+		Where: []WhereClause{
+			{AND_TYPE, SimpleExpr{columnEq(jdb.GetIDName())}},
+		},
 	})
 
 	return jdb.GetRow(sql, v, id)
@@ -59,7 +62,10 @@ func (jdb *DB) Select(table string, v any) error {
 	fields := extractFields(structInstance)
 	columns := pluckNames(fields)
 
-	sql := buildSelectQuery(columns, table, []WhereClause{})
+	sql := buildSelectQuery(Select{
+		Columns: columns,
+		From:    table,
+	})
 
 	return jdb.SelectAll(sql, v)
 }
@@ -132,7 +138,10 @@ func (jdb *DB) Page(table string, options PageOptions, v any) error {
 func (jdb *DB) Count(table string) (uint, error) {
 	var count uint = 0
 
-	sql := buildSelectQuery([]string{"count(1)"}, table, []WhereClause{})
+	sql := buildSelectQuery(Select{
+		Columns: []string{"count(1)"},
+		From:    table,
+	})
 
 	result := jdb.DB.QueryRow(sql)
 

@@ -70,8 +70,12 @@ func (q QueryDB) Get(id any, v any) error {
 	fields := extractFields(v)
 	columns := pluckNames(fields)
 
-	sql := buildSelectQuery(columns, q.From, []WhereClause{
-		{AND_TYPE, SimpleExpr{columnEq(q.DB.GetIDName())}},
+	sql := buildSelectQuery(Select{
+		Columns: columns,
+		From:    q.From,
+		Where: []WhereClause{
+			{AND_TYPE, SimpleExpr{columnEq(q.DB.GetIDName())}},
+		},
 	})
 
 	return q.DB.GetRow(sql, v, id)
@@ -85,7 +89,11 @@ func (q QueryDB) One(v any, values ...any) error {
 	fields := extractFields(v)
 	columns := pluckNames(fields)
 
-	sql := buildSelectQuery(columns, q.From, q.WhereClauses)
+	sql := buildSelectQuery(Select{
+		Columns: columns,
+		From:    q.From,
+		Where:   q.WhereClauses,
+	})
 
 	return q.DB.GetRow(sql, v, values...)
 }
