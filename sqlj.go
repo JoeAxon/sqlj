@@ -33,7 +33,7 @@ func (jdb *DB) Get(table string, id any, v any) error {
 		Columns: columns,
 		From:    table,
 		Where: []WhereClause{
-			{AND_TYPE, SimpleExpr{columnEq(jdb.GetIDName())}},
+			{AND_TYPE, SimpleExpr{columnEq(jdb.getIDName())}},
 		},
 	})
 
@@ -229,7 +229,7 @@ func (jdb *DB) Delete(table string, id any) error {
 	sql := buildDeleteSQL(Delete{
 		From: table,
 		Where: []WhereClause{
-			{AND_TYPE, SimpleExpr{columnEq(jdb.GetIDName())}},
+			{AND_TYPE, SimpleExpr{columnEq(jdb.getIDName())}},
 		},
 	})
 
@@ -240,7 +240,7 @@ func (jdb *DB) Delete(table string, id any) error {
 	return err
 }
 
-func (jdb *DB) GetIDName() string {
+func (jdb *DB) getIDName() string {
 	if jdb.IDColumn == "" {
 		return "id"
 	}

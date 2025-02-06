@@ -74,7 +74,7 @@ func (q QueryDB) Get(id any, v any) error {
 		Columns: columns,
 		From:    q.From,
 		Where: []WhereClause{
-			{AND_TYPE, SimpleExpr{columnEq(q.DB.GetIDName())}},
+			{AND_TYPE, SimpleExpr{columnEq(q.DB.getIDName())}},
 		},
 	})
 
