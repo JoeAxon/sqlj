@@ -57,21 +57,27 @@ func buildInsertSQL(options Insert) string {
 	)
 }
 
-func buildUpdateSQL(table string, fields []Field, columns []string) string {
-	setExpressions := make([]string, len(fields))
-	for idx, f := range fields {
+type Update struct {
+	From      string
+	Fields    []Field
+	Returning []string
+}
+
+func buildUpdateSQL(options Update) string {
+	setExpressions := make([]string, len(options.Fields))
+	for idx, f := range options.Fields {
 		setExpressions[idx] = fmt.Sprintf("%s = %s", f.GetName(), f.GetPlaceholder(idx))
 	}
 
 	return strings.Join(
 		[]string{
 			"UPDATE ",
-			table,
+			options.From,
 			" SET ",
 			strings.Join(setExpressions, ", "),
-			fmt.Sprintf(" WHERE id = $%d ", len(fields)),
+			fmt.Sprintf(" WHERE id = $%d ", len(options.Fields)),
 			"RETURNING ",
-			strings.Join(columns, ", "),
+			strings.Join(options.Returning, ", "),
 		},
 		"",
 	)

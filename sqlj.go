@@ -212,7 +212,11 @@ func (jdb *DB) UpdateWithOptions(table string, id any, options Options, v any) e
 	filteredFields := filterFields(fields, jdb.SkipOnInsert)
 	returnColumns := pluckNames(allFields)
 
-	sql := buildUpdateSQL(table, filteredFields, returnColumns)
+	sql := buildUpdateSQL(Update{
+		From:      table,
+		Fields:    filteredFields,
+		Returning: returnColumns,
+	})
 
 	values := pluckValues(filteredFields)
 	values = append(values, id)
