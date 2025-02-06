@@ -92,33 +92,33 @@ type Select struct {
 	Columns []string
 }
 
-func buildSelectQuery(selectQuery Select) string {
-	sql := strings.Join([]string{"SELECT ", strings.Join(selectQuery.Columns, ", "), " FROM ", selectQuery.From}, "")
+func buildSelectQuery(options Select) string {
+	sql := strings.Join([]string{"SELECT ", strings.Join(options.Columns, ", "), " FROM ", options.From}, "")
 
 	var placeholderOffset uint = 0
-	if len(selectQuery.Where) > 0 {
-		whereSql, replacements := buildWhereClause(selectQuery.Where)
+	if len(options.Where) > 0 {
+		whereSql, replacements := buildWhereClause(options.Where)
 		sql = strings.Join([]string{sql, " WHERE ", whereSql}, "")
 
 		placeholderOffset += replacements
 	}
 
-	if len(selectQuery.OrderBy) > 0 {
-		orderByClauses := make([]string, len(selectQuery.OrderBy))
+	if len(options.OrderBy) > 0 {
+		orderByClauses := make([]string, len(options.OrderBy))
 
-		for idx, o := range selectQuery.OrderBy {
+		for idx, o := range options.OrderBy {
 			orderByClauses[idx] = strings.Join([]string{o.expression, o.direction}, " ")
 		}
 
 		sql = strings.Join([]string{sql, " ORDER BY ", strings.Join(orderByClauses, ", ")}, "")
 	}
 
-	if selectQuery.Offset {
+	if options.Offset {
 		sql = strings.Join([]string{sql, " OFFSET ", fmt.Sprintf("$%d", placeholderOffset)}, "")
 		placeholderOffset++
 	}
 
-	if selectQuery.Limit {
+	if options.Limit {
 		sql = strings.Join([]string{sql, " LIMIT ", fmt.Sprintf("$%d", placeholderOffset)}, "")
 		placeholderOffset++
 	}
