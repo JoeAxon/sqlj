@@ -22,12 +22,18 @@ func buildDeleteSQL(options Delete) string {
 	return sql
 }
 
-func buildInsertSQL(table string, fields []Field, columns []string) string {
-	names := make([]string, len(fields))
-	placeholders := make([]string, len(fields))
+type Insert struct {
+	From      string
+	Fields    []Field
+	Returning []string
+}
+
+func buildInsertSQL(options Insert) string {
+	names := make([]string, len(options.Fields))
+	placeholders := make([]string, len(options.Fields))
 
 	n := 0
-	for idx, f := range fields {
+	for idx, f := range options.Fields {
 		names[idx] = f.GetName()
 		placeholders[idx] = f.GetPlaceholder(n)
 
@@ -39,13 +45,13 @@ func buildInsertSQL(table string, fields []Field, columns []string) string {
 	return strings.Join(
 		[]string{
 			"INSERT INTO ",
-			table,
+			options.From,
 			" (",
 			strings.Join(names, ", "),
 			") VALUES (",
 			strings.Join(placeholders, ", "),
 			") RETURNING ",
-			strings.Join(columns, ", "),
+			strings.Join(options.Returning, ", "),
 		},
 		"",
 	)

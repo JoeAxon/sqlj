@@ -178,7 +178,11 @@ func (jdb *DB) InsertWithOptions(table string, options Options, v any) error {
 	filteredFields := filterFields(fields, jdb.SkipOnInsert)
 	returnColumns := pluckNames(allFields)
 
-	sql := buildInsertSQL(table, filteredFields, returnColumns)
+	sql := buildInsertSQL(Insert{
+		From:      table,
+		Fields:    filteredFields,
+		Returning: returnColumns,
+	})
 
 	values := pluckValues(filteredFields)
 
