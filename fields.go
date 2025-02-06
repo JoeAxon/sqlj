@@ -1,6 +1,9 @@
 package sqlj
 
-import "fmt"
+import (
+	"fmt"
+	"slices"
+)
 
 type Field interface {
 	GetName() string
@@ -81,4 +84,39 @@ func pluckValues(fields []Field) []any {
 	}
 
 	return values[:n]
+}
+
+// TODO: Rewrite this so it's deterministic. Currently the order the fields is changed.
+func dedupeFields(fields []Field) []Field {
+	indexedFields := make(map[string]Field)
+
+	for _, f := range fields {
+		indexedFields[f.GetName()] = f
+	}
+
+	allFields := make([]Field, len(indexedFields))
+
+	n := 0
+	for _, v := range indexedFields {
+		allFields[n] = v
+		n++
+	}
+
+	return allFields
+}
+
+func filterFields(fields []Field, skipColumns []string) []Field {
+	outFields := make([]Field, len(fields))
+
+	n := 0
+	for _, f := range fields {
+		if slices.Contains(skipColumns, f.GetName()) {
+			continue
+		}
+
+		outFields[n] = f
+		n++
+	}
+
+	return outFields[:n]
 }
