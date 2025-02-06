@@ -1,7 +1,7 @@
 package sqlj
 
 type QueryDB struct {
-	DB           DB
+	DB           *DB
 	From         string
 	WhereClauses []WhereClause
 }
@@ -62,6 +62,8 @@ func (q QueryDB) OrWhereExpr(expr Expr) QueryDB {
 	return q
 }
 
+// Get a record by ID.
+// This will ignore any previous calls to .Where and .OrWhere
 func (q QueryDB) Get(id any, v any) error {
 	if err := checkValueType(v); err != nil {
 		return err
@@ -81,6 +83,7 @@ func (q QueryDB) Get(id any, v any) error {
 	return q.DB.GetRow(sql, v, id)
 }
 
+// Get a single record from the given table.
 func (q QueryDB) One(v any, values ...any) error {
 	if err := checkValueType(v); err != nil {
 		return err

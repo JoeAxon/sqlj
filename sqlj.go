@@ -240,6 +240,13 @@ func (jdb *DB) Delete(table string, id any) error {
 	return err
 }
 
+func (jdb *DB) From(table string) QueryDB {
+	return QueryDB{
+		DB:   jdb,
+		From: table,
+	}
+}
+
 func (jdb *DB) getIDName() string {
 	if jdb.IDColumn == "" {
 		return "id"

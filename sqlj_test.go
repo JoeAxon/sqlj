@@ -282,3 +282,56 @@ func TestInsertWithOptions(t *testing.T) {
 		t.Fatalf("Failed to retrieve user: %s\n", err.Error())
 	}
 }
+
+func TestFrom(t *testing.T) {
+	db, err := sql.Open("sqlite3", ":memory:")
+
+	defer db.Close()
+
+	db.Exec("CREATE TABLE user (id integer primary key, name text, email text, created_at timestamp)")
+
+	if err != nil {
+		t.Fatalf("Failed to open db: %s\n", err.Error())
+	}
+
+	jdb := DB{
+		DB:           db,
+		SkipOnInsert: []string{"id"},
+	}
+
+	userA := User{
+		Name:  "Jess",
+		Email: "jess@example.com",
+	}
+
+	userB := User{
+		Name:  "Joe",
+		Email: "joe@example.com",
+	}
+
+	if err := jdb.Insert("user", &userA); err != nil {
+		t.Fatalf("Failed to insert user: %s\n", err.Error())
+	}
+
+	if err := jdb.Insert("user", &userB); err != nil {
+		t.Fatalf("Failed to insert user: %s\n", err.Error())
+	}
+
+	var foundUserA User
+	if err := jdb.From("user").Get(userA.ID, &foundUserA); err != nil {
+		t.Fatalf("Fluent API, failed to get user: %s\n", err.Error())
+	}
+
+	if foundUserA.Name != userA.Name {
+		t.Fatalf("Fluent API, name mismatch. Expected: %s, Got: %s\n", userA.Name, foundUserA.Name)
+	}
+
+	var foundUserB User
+	if err := jdb.From("user").Where("name = ?").One(&foundUserB, userB.Name); err != nil {
+		t.Fatalf("Fluent API, failed to get user: %s\n", err.Error())
+	}
+
+	if foundUserB.ID != userB.ID {
+		t.Fatalf("Fluent API, ID mismatch. Expected: %d, Got: %d\n", userA.ID, foundUserA.ID)
+	}
+}
