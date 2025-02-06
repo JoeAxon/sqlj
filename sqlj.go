@@ -221,7 +221,7 @@ func (jdb *DB) Delete(table string, id any) error {
 	sql := buildDeleteSQL(Delete{
 		From: table,
 		Where: []WhereClause{
-			{"AND", SimpleExpr{columnEq(jdb.GetIDName())}},
+			{AND_TYPE, SimpleExpr{columnEq(jdb.GetIDName())}},
 		},
 	})
 
