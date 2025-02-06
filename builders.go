@@ -2,6 +2,7 @@ package sqlj
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -131,9 +132,14 @@ func buildWhereClause(clauses []WhereClause) (string, uint) {
 		return "", 0
 	}
 
+	sql := joinWhereClauses(clauses)
+
+	return replacePlaceholder(sql, 0)
+}
+
+func joinWhereClauses(clauses []WhereClause) string {
 	sql := make([]string, len(clauses)*2)
 
-	var n uint = 0
 	for idx, clause := range clauses {
 		if idx == 0 {
 			sql[idx*2] = ""
@@ -141,14 +147,10 @@ func buildWhereClause(clauses []WhereClause) (string, uint) {
 			sql[idx*2] = clause.Type
 		}
 
-		expr, replacementCount := replacePlaceholder(clause.Expr.String(), n)
-
-		sql[idx*2+1] = expr
-
-		n += replacementCount
+		sql[idx*2+1] = clause.Expr.String()
 	}
 
-	return strings.Join(sql[1:], " "), n
+	return strings.Join(sql[1:], " ")
 }
 
 func columnEq(column string) string {
@@ -162,18 +164,22 @@ func parens(expr string) string {
 func replacePlaceholder(expr string, offset uint) (string, uint) {
 	matches := indexMatches(expr)
 
-	pieces := make([]string, len(matches)*3)
+	sql := expr
+
+	// Reverse the slice so the indexes are still valid as we modify the SQL.
+	slices.Reverse(matches)
 
 	for idx, match := range matches {
-		left := expr[:match]
-		right := expr[match+1:]
+		left := sql[:match]
+		right := sql[match+1:]
 
-		pieces[idx] = left
-		pieces[idx+1] = fmt.Sprintf("$%d", idx+int(offset))
-		pieces[idx+2] = right
+		// This is a little more complicated because we're iterating in reverse.
+		placeholder := (len(matches) - idx - 1) + int(offset)
+
+		sql = strings.Join([]string{left, fmt.Sprintf("$%d", placeholder), right}, "")
 	}
 
-	return strings.Join(pieces, ""), 0
+	return sql, uint(len(matches))
 }
 
 func indexMatches(expr string) []uint {

@@ -33,8 +33,7 @@ func (e SimpleExpr) String() string {
 }
 
 func (e NestedExpr) String() string {
-	whereSql, _ := buildWhereClause(e.exprs)
-	return parens(whereSql)
+	return parens(joinWhereClauses(e.exprs))
 }
 
 func (q QueryDB) Where(expr string) QueryDB {

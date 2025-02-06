@@ -2,15 +2,14 @@ package sqlj
 
 import "testing"
 
-/*
 func TestBuildWhereClause(t *testing.T) {
-	result := buildWhereClause([]WhereClause{})
+	result, replacements := buildWhereClause([]WhereClause{})
 
-	if result != "" {
+	if result != "" || replacements != 0 {
 		t.Fatalf("Expected an empty string, got: %s\n", result)
 	}
 
-	result = buildWhereClause([]WhereClause{
+	result, replacements = buildWhereClause([]WhereClause{
 		{"AND", SimpleExpr{"id = ?"}},
 	})
 
@@ -19,25 +18,37 @@ func TestBuildWhereClause(t *testing.T) {
 		t.Fatalf("Simple where clause failed")
 	}
 
-	result = buildWhereClause([]WhereClause{
+	if replacements != 1 {
+		t.Fatalf("Expected 1 replacement, got: %d\n", replacements)
+	}
+
+	result, replacements = buildWhereClause([]WhereClause{
 		{"AND", SimpleExpr{"post_type = ?"}},
 		{"AND", SimpleExpr{"created_at > ?"}},
 	})
 
 	if result != "post_type = $0 AND created_at > $1" {
-		t.Fatalf("Multiple AND where clause failed")
+		t.Fatalf("Multiple AND where clause failed: %s\n", result)
 	}
 
-	result = buildWhereClause([]WhereClause{
+	if replacements != 2 {
+		t.Fatalf("Expected 2 replacements, got: %d\n", replacements)
+	}
+
+	result, replacements = buildWhereClause([]WhereClause{
 		{"AND", SimpleExpr{"post_type = ?"}},
 		{"OR", SimpleExpr{"title = ?"}},
 	})
 
 	if result != "post_type = $0 OR title = $1" {
-		t.Fatalf("Multiple AND OR where clause failed")
+		t.Fatalf("Multiple AND OR where clause failed: %s\n", result)
 	}
 
-	result = buildWhereClause([]WhereClause{
+	if replacements != 2 {
+		t.Fatalf("Expected 2 replacements, got: %d\n", replacements)
+	}
+
+	result, replacements = buildWhereClause([]WhereClause{
 		{"AND", SimpleExpr{"id = ?"}},
 		{"AND", NestedExpr{[]WhereClause{
 			{"AND", SimpleExpr{"post_type = ?"}},
@@ -46,10 +57,13 @@ func TestBuildWhereClause(t *testing.T) {
 	})
 
 	if result != "id = $0 AND (post_type = $1 OR title = $2)" {
-		t.Fatalf("Nested expression failed")
+		t.Fatalf("Nested expression failed: %s\n", result)
+	}
+
+	if replacements != 3 {
+		t.Fatalf("Expected 3 replacements, got: %d\n", replacements)
 	}
 }
-*/
 
 func TestIndexMatches(t *testing.T) {
 	result := indexMatches("something = nothing")
