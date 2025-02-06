@@ -3,7 +3,6 @@ package sqlj
 import (
 	"database/sql"
 	"errors"
-	"strings"
 )
 
 type DB struct {
@@ -122,13 +121,13 @@ func (jdb *DB) Page(table string, options PageOptions, v any) error {
 	offset := (options.pageNumber - 1) * options.pageSize
 	limit := options.pageSize
 
-	orderByClauses := make([]string, len(options.order))
-
-	for idx, o := range options.order {
-		orderByClauses[idx] = strings.Join([]string{o.expression, o.direction}, " ")
-	}
-
-	sql := strings.Join([]string{"SELECT ", strings.Join(columns, ", "), " FROM ", table, " ORDER BY ", strings.Join(orderByClauses, ", "), " OFFSET $1 LIMIT $2"}, "")
+	sql := buildSelectQuery(Select{
+		From:    table,
+		OrderBy: options.order,
+		Columns: columns,
+		Offset:  true,
+		Limit:   true,
+	})
 
 	return jdb.SelectAll(sql, v, offset, limit)
 }
@@ -219,7 +218,12 @@ func (jdb *DB) UpdateWithOptions(table string, id any, options Options, v any) e
 
 // Deletes a row in the given table by ID.
 func (jdb *DB) Delete(table string, id any) error {
-	sql := strings.Join([]string{"DELETE FROM ", table, " WHERE ", jdb.GetIDName(), " = $1"}, "")
+	sql := buildDeleteSQL(Delete{
+		From: table,
+		Where: []WhereClause{
+			{"AND", SimpleExpr{columnEq(jdb.GetIDName())}},
+		},
+	})
 
 	// TODO: It would be prudent to check RowsAffected() on the result.
 	// I need to look into how this is supports with different DB drivers.

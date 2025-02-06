@@ -5,6 +5,23 @@ import (
 	"strings"
 )
 
+type Delete struct {
+	From  string
+	Where []WhereClause
+}
+
+func buildDeleteSQL(options Delete) string {
+	sql := strings.Join([]string{"DELETE FROM ", options.From}, "")
+
+	if len(options.Where) > 0 {
+		whereSQL, _ := buildWhereClause(options.Where)
+
+		sql = strings.Join([]string{sql, " WHERE ", whereSQL}, "")
+	}
+
+	return sql
+}
+
 func buildInsertSQL(table string, fields []Field, columns []string) string {
 	names := make([]string, len(fields))
 	placeholders := make([]string, len(fields))
@@ -56,24 +73,50 @@ func buildUpdateSQL(table string, fields []Field, columns []string) string {
 
 type Select struct {
 	From    string
-	Columns []string
 	Where   []WhereClause
 	OrderBy []OrderBy
+	Offset  bool
+	Limit   bool
+	Columns []string
 }
 
 func buildSelectQuery(selectQuery Select) string {
 	sql := strings.Join([]string{"SELECT ", strings.Join(selectQuery.Columns, ", "), " FROM ", selectQuery.From}, "")
 
+	var placeholderOffset uint = 0
 	if len(selectQuery.Where) > 0 {
-		sql = strings.Join([]string{sql, " WHERE ", buildWhereClause(selectQuery.Where)}, "")
+		whereSql, replacements := buildWhereClause(selectQuery.Where)
+		sql = strings.Join([]string{sql, " WHERE ", whereSql}, "")
+
+		placeholderOffset += replacements
+	}
+
+	if len(selectQuery.OrderBy) > 0 {
+		orderByClauses := make([]string, len(selectQuery.OrderBy))
+
+		for idx, o := range selectQuery.OrderBy {
+			orderByClauses[idx] = strings.Join([]string{o.expression, o.direction}, " ")
+		}
+
+		sql = strings.Join([]string{sql, " ORDER BY ", strings.Join(orderByClauses, ", ")}, "")
+	}
+
+	if selectQuery.Offset {
+		sql = strings.Join([]string{sql, " OFFSET ", fmt.Sprintf("$%d", placeholderOffset)}, "")
+		placeholderOffset++
+	}
+
+	if selectQuery.Limit {
+		sql = strings.Join([]string{sql, " LIMIT ", fmt.Sprintf("$%d", placeholderOffset)}, "")
+		placeholderOffset++
 	}
 
 	return sql
 }
 
-func buildWhereClause(clauses []WhereClause) string {
+func buildWhereClause(clauses []WhereClause) (string, uint) {
 	if len(clauses) == 0 {
-		return ""
+		return "", 0
 	}
 
 	sql := make([]string, len(clauses)*2)
@@ -93,7 +136,7 @@ func buildWhereClause(clauses []WhereClause) string {
 		n += replacementCount
 	}
 
-	return strings.Join(sql[1:], " ")
+	return strings.Join(sql[1:], " "), n
 }
 
 func columnEq(column string) string {
