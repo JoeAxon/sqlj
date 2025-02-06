@@ -31,7 +31,9 @@ func (jdb *DB) Get(table string, id any, v any) error {
 	fields := extractFields(v)
 	columns := pluckNames(fields)
 
-	sql := strings.Join([]string{"SELECT ", strings.Join(columns, ", "), " FROM ", table, " WHERE ", jdb.GetIDName(), " = $1"}, "")
+	sql := buildSelectQuery(columns, table, []WhereClause{
+		{"AND", SimpleExpr{fmt.Sprintf("%s = ?", jdb.GetIDName())}},
+	})
 
 	return jdb.GetRow(sql, v, id)
 }
@@ -57,7 +59,7 @@ func (jdb *DB) Select(table string, v any) error {
 	fields := extractFields(structInstance)
 	columns := pluckNames(fields)
 
-	sql := strings.Join([]string{"SELECT ", strings.Join(columns, ", "), " FROM ", table}, "")
+	sql := buildSelectQuery(columns, table, []WhereClause{})
 
 	return jdb.SelectAll(sql, v)
 }
@@ -130,7 +132,7 @@ func (jdb *DB) Page(table string, options PageOptions, v any) error {
 func (jdb *DB) Count(table string) (uint, error) {
 	var count uint = 0
 
-	sql := strings.Join([]string{"SELECT count(1) FROM ", table}, "")
+	sql := buildSelectQuery([]string{"count(1)"}, table, []WhereClause{})
 
 	result := jdb.DB.QueryRow(sql)
 
@@ -223,53 +225,4 @@ func (jdb *DB) GetIDName() string {
 	}
 
 	return jdb.IDColumn
-}
-
-func buildInsertSQL(table string, fields []Field, columns []string) string {
-	names := make([]string, len(fields))
-	placeholders := make([]string, len(fields))
-
-	n := 0
-	for idx, f := range fields {
-		names[idx] = f.GetName()
-		placeholders[idx] = f.GetPlaceholder(n)
-
-		if !f.IsLiteral() {
-			n++
-		}
-	}
-
-	return strings.Join(
-		[]string{
-			"INSERT INTO ",
-			table,
-			" (",
-			strings.Join(names, ", "),
-			") VALUES (",
-			strings.Join(placeholders, ", "),
-			") RETURNING ",
-			strings.Join(columns, ", "),
-		},
-		"",
-	)
-}
-
-func buildUpdateSQL(table string, fields []Field, columns []string) string {
-	setExpressions := make([]string, len(fields))
-	for idx, f := range fields {
-		setExpressions[idx] = fmt.Sprintf("%s = %s", f.GetName(), f.GetPlaceholder(idx))
-	}
-
-	return strings.Join(
-		[]string{
-			"UPDATE ",
-			table,
-			" SET ",
-			strings.Join(setExpressions, ", "),
-			fmt.Sprintf(" WHERE id = $%d ", len(fields)),
-			"RETURNING ",
-			strings.Join(columns, ", "),
-		},
-		"",
-	)
 }
