@@ -96,4 +96,14 @@ func TestFrom(t *testing.T) {
 	if reverseSortedUsers[0].Name != "Joe" {
 		t.Fatalf("Fluent API, sorting failed")
 	}
+
+	count, err := jdb.From("user").Count()
+
+	if err != nil {
+		t.Fatalf("Fluent API, failed to count users: %s\n", err.Error())
+	}
+
+	if count != 3 {
+		t.Fatalf("Fluent API, incorrect count. Expected: 3, Got: %d\n", count)
+	}
 }

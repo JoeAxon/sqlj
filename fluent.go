@@ -10,36 +10,6 @@ type QueryDB struct {
 	WhereValues  []any
 }
 
-const (
-	AND_TYPE = "AND"
-	OR_TYPE  = "OR"
-)
-
-type WhereClause struct {
-	Type string
-	Expr Expr
-}
-
-type Expr interface {
-	String() string
-}
-
-type SimpleExpr struct {
-	expr string
-}
-
-type NestedExpr struct {
-	exprs []WhereClause
-}
-
-func (e SimpleExpr) String() string {
-	return e.expr
-}
-
-func (e NestedExpr) String() string {
-	return parens(joinWhereClauses(e.exprs))
-}
-
 func (q QueryDB) Where(expr string, values ...any) QueryDB {
 	return q.WhereExpr(SimpleExpr{expr}, values...)
 }
@@ -137,6 +107,10 @@ func (q QueryDB) All(v any) error {
 	return q.DB.SelectAll(sql, v, q.WhereValues...)
 }
 
+// Selects a page of data from the given table.
+// The options parameter allows you to specify the page, page size and order by clauses.
+// The results will be marshalled into the v slice of structs.
+// v must be a pointer to a slice of structs.
 func (q QueryDB) Page(options PageOptions, v any) error {
 	if options.pageNumber < 1 {
 		return errors.New("Page number must be greater than 0")
@@ -173,4 +147,24 @@ func (q QueryDB) Page(options PageOptions, v any) error {
 	values := append(q.WhereValues, offset, limit)
 
 	return q.DB.SelectAll(sql, v, values...)
+}
+
+// Counts the number of records in the table.
+// This is intended to be used in conjunction with .Page.
+func (q QueryDB) Count() (uint, error) {
+	var count uint = 0
+
+	sql := buildSelectQuery(Select{
+		From:    q.From,
+		Where:   q.WhereClauses,
+		Columns: []string{"count(1)"},
+	})
+
+	result := q.DB.DB.QueryRow(sql)
+
+	if err := result.Scan(&count); err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }

@@ -2,7 +2,6 @@ package sqlj
 
 import (
 	"database/sql"
-	"errors"
 )
 
 type DB struct {
@@ -17,6 +16,10 @@ type DBLike interface {
 	Exec(query string, args ...any) (sql.Result, error)
 	Query(query string, args ...any) (*sql.Rows, error)
 	QueryRow(query string, args ...any) *sql.Row
+}
+
+type Options struct {
+	Fields []Field
 }
 
 // Gets a single row from the given table with the given id.
@@ -80,79 +83,6 @@ func (jdb *DB) SelectAll(sql string, v any, values ...any) error {
 	}
 
 	return scanRowsIntoStructs(rows, v)
-}
-
-type PageOptions struct {
-	pageNumber uint
-	pageSize   uint
-	order      []OrderBy
-}
-
-type OrderBy struct {
-	expression string
-	direction  string
-}
-
-// Selects a page of data from the given table.
-// The options parameter allows you to specify the page, page size and order by clauses.
-// The results will be marshalled into the v slice of structs.
-// v must be a pointer to a slice of structs.
-func (jdb *DB) Page(table string, options PageOptions, v any) error {
-	if options.pageNumber < 1 {
-		return errors.New("Page number must be greater than 0")
-	}
-
-	if options.pageSize < 1 {
-		return errors.New("Page size must be greater than 0")
-	}
-
-	if len(options.order) == 0 {
-		return errors.New("Must include atleast one order by")
-	}
-
-	structInstance, err := getSliceStructInstance(v)
-	if err != nil {
-		return err
-	}
-
-	fields := extractFields(structInstance)
-	columns := pluckNames(fields)
-
-	offset := (options.pageNumber - 1) * options.pageSize
-	limit := options.pageSize
-
-	sql := buildSelectQuery(Select{
-		From:    table,
-		OrderBy: options.order,
-		Columns: columns,
-		Offset:  true,
-		Limit:   true,
-	})
-
-	return jdb.SelectAll(sql, v, offset, limit)
-}
-
-// Counts the number of records in the table.
-// This is intended to be used in conjunction with .Page.
-func (jdb *DB) Count(table string) (uint, error) {
-	var count uint = 0
-
-	sql := buildSelectQuery(Select{
-		Columns: []string{"count(1)"},
-		From:    table,
-	})
-
-	result := jdb.DB.QueryRow(sql)
-
-	if err := result.Scan(&count); err != nil {
-		return 0, err
-	}
-
-	return count, nil
-}
-
-type Options struct {
-	Fields []Field
 }
 
 // Inserts a row into the specified `table` with the given struct.
