@@ -146,9 +146,9 @@ func TestPage(t *testing.T) {
 	userQuery := jdb.From("user")
 
 	options := PageOptions{
-		pageNumber: 1,
-		pageSize:   10,
-		order: []OrderBy{
+		PageNumber: 1,
+		PageSize:   10,
+		Order: []OrderBy{
 			{"name", "ASC"},
 		},
 	}
@@ -177,7 +177,7 @@ func TestPage(t *testing.T) {
 		t.Fatalf("Expected first user to be 'Jafar', got: %s\n", firstPage[0].Name)
 	}
 
-	options.pageNumber += 1
+	options.PageNumber += 1
 
 	var secondPage []User
 

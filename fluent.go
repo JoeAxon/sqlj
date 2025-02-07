@@ -44,8 +44,8 @@ func (q QueryDB) OrWhereExpr(expr Expr, values ...any) QueryDB {
 
 func (q QueryDB) Order(expression string, direction string) QueryDB {
 	q.OrderClauses = append(q.OrderClauses, OrderBy{
-		expression: expression,
-		direction:  direction,
+		Expression: expression,
+		Direction:  direction,
 	})
 
 	return q
@@ -114,15 +114,15 @@ func (q QueryDB) All(v any) error {
 // The results will be marshalled into the v slice of structs.
 // v must be a pointer to a slice of structs.
 func (q QueryDB) Page(options PageOptions, v any) error {
-	if options.pageNumber < 1 {
+	if options.PageNumber < 1 {
 		return errors.New("Page number must be greater than 0")
 	}
 
-	if options.pageSize < 1 {
+	if options.PageSize < 1 {
 		return errors.New("Page size must be greater than 0")
 	}
 
-	if len(options.order) == 0 {
+	if len(options.Order) == 0 {
 		return errors.New("Must include atleast one order by")
 	}
 
@@ -134,13 +134,13 @@ func (q QueryDB) Page(options PageOptions, v any) error {
 	fields := extractFields(structInstance)
 	columns := pluckNames(fields)
 
-	offset := (options.pageNumber - 1) * options.pageSize
-	limit := options.pageSize
+	offset := (options.PageNumber - 1) * options.PageSize
+	limit := options.PageSize
 
 	sql := buildSelectQuery(Select{
 		From:    q.From,
 		Where:   q.WhereClauses,
-		OrderBy: options.order,
+		OrderBy: options.Order,
 		Columns: columns,
 		Offset:  true,
 		Limit:   true,

@@ -108,7 +108,7 @@ func buildSelectQuery(options Select) string {
 		orderByClauses := make([]string, len(options.OrderBy))
 
 		for idx, o := range options.OrderBy {
-			orderByClauses[idx] = strings.Join([]string{o.expression, o.direction}, " ")
+			orderByClauses[idx] = strings.Join([]string{o.Expression, o.Direction}, " ")
 		}
 
 		sql = strings.Join([]string{sql, " ORDER BY ", strings.Join(orderByClauses, ", ")}, "")
