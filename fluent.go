@@ -1,6 +1,8 @@
 package sqlj
 
-import "errors"
+import (
+	"errors"
+)
 
 type QueryDB struct {
 	DB           *DB
@@ -144,7 +146,7 @@ func (q QueryDB) Page(options PageOptions, v any) error {
 		Limit:   true,
 	})
 
-	values := append(q.WhereValues, offset, limit)
+	values := append(q.WhereValues, limit, offset)
 
 	return q.DB.SelectAll(sql, v, values...)
 }

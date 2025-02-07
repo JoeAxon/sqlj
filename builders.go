@@ -114,13 +114,13 @@ func buildSelectQuery(options Select) string {
 		sql = strings.Join([]string{sql, " ORDER BY ", strings.Join(orderByClauses, ", ")}, "")
 	}
 
-	if options.Offset {
-		sql = strings.Join([]string{sql, " OFFSET ", fmt.Sprintf("$%d", placeholderOffset)}, "")
+	if options.Limit {
+		sql = strings.Join([]string{sql, " LIMIT ", fmt.Sprintf("$%d", placeholderOffset)}, "")
 		placeholderOffset++
 	}
 
-	if options.Limit {
-		sql = strings.Join([]string{sql, " LIMIT ", fmt.Sprintf("$%d", placeholderOffset)}, "")
+	if options.Offset {
+		sql = strings.Join([]string{sql, " OFFSET ", fmt.Sprintf("$%d", placeholderOffset)}, "")
 		placeholderOffset++
 	}
 
