@@ -118,7 +118,7 @@ func (q QueryDB) One(v any) error {
 	return q.DB.GetRow(sql, v, q.WhereValues...)
 }
 
-func (q QueryDB) Select(v any, values ...any) error {
+func (q QueryDB) All(v any) error {
 	structInstance, err := getSliceStructInstance(v)
 	if err != nil {
 		return err
@@ -134,10 +134,10 @@ func (q QueryDB) Select(v any, values ...any) error {
 		Columns: columns,
 	})
 
-	return q.DB.SelectAll(sql, v)
+	return q.DB.SelectAll(sql, v, q.WhereValues...)
 }
 
-func (q QueryDB) Page(options PageOptions, v any, values ...any) error {
+func (q QueryDB) Page(options PageOptions, v any) error {
 	if options.pageNumber < 1 {
 		return errors.New("Page number must be greater than 0")
 	}
@@ -170,5 +170,7 @@ func (q QueryDB) Page(options PageOptions, v any, values ...any) error {
 		Limit:   true,
 	})
 
-	return q.DB.SelectAll(sql, v, offset, limit)
+	values := append(q.WhereValues, offset, limit)
+
+	return q.DB.SelectAll(sql, v, values...)
 }

@@ -345,7 +345,7 @@ func TestFrom(t *testing.T) {
 	}
 
 	var allUsers []User
-	if err := jdb.From("user").Select(&allUsers); err != nil {
+	if err := jdb.From("user").All(&allUsers); err != nil {
 		t.Fatalf("Fluent API, failed to select all: %s\n", err.Error())
 	}
 
@@ -354,7 +354,7 @@ func TestFrom(t *testing.T) {
 	}
 
 	var sortedUsers []User
-	if err := jdb.From("user").Order("name", "ASC").Select(&sortedUsers); err != nil {
+	if err := jdb.From("user").Order("name", "ASC").All(&sortedUsers); err != nil {
 		t.Fatalf("Fluent API, failed to select all: %s\n", err.Error())
 	}
 
@@ -363,7 +363,7 @@ func TestFrom(t *testing.T) {
 	}
 
 	var reverseSortedUsers []User
-	if err := jdb.From("user").Order("name", "DESC").Select(&reverseSortedUsers); err != nil {
+	if err := jdb.From("user").Order("name", "DESC").All(&reverseSortedUsers); err != nil {
 		t.Fatalf("Fluent API, failed to select all: %s\n", err.Error())
 	}
 
