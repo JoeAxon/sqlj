@@ -13,7 +13,7 @@ func TestBuildWhereClause(t *testing.T) {
 		{"AND", SimpleExpr{"id = ?"}},
 	})
 
-	if result != "id = $0" {
+	if result != "id = $1" {
 		t.Log("\"", result, "\"")
 		t.Fatalf("Simple where clause failed")
 	}
@@ -27,7 +27,7 @@ func TestBuildWhereClause(t *testing.T) {
 		{"AND", SimpleExpr{"created_at > ?"}},
 	})
 
-	if result != "post_type = $0 AND created_at > $1" {
+	if result != "post_type = $1 AND created_at > $2" {
 		t.Fatalf("Multiple AND where clause failed: %s\n", result)
 	}
 
@@ -40,7 +40,7 @@ func TestBuildWhereClause(t *testing.T) {
 		{"OR", SimpleExpr{"title = ?"}},
 	})
 
-	if result != "post_type = $0 OR title = $1" {
+	if result != "post_type = $1 OR title = $2" {
 		t.Fatalf("Multiple AND OR where clause failed: %s\n", result)
 	}
 
@@ -56,7 +56,7 @@ func TestBuildWhereClause(t *testing.T) {
 		}}},
 	})
 
-	if result != "id = $0 AND (post_type = $1 OR title = $2)" {
+	if result != "id = $1 AND (post_type = $2 OR title = $3)" {
 		t.Fatalf("Nested expression failed: %s\n", result)
 	}
 
@@ -108,13 +108,13 @@ func TestReplacePlaceholder(t *testing.T) {
 
 	result, replacements = replacePlaceholder("a = ?", 0)
 
-	if replacements != 1 && result != "a = $0" {
+	if replacements != 1 && result != "a = $1" {
 		t.Fatalf("Expected 1 replacement, got: %d - %s", replacements, result)
 	}
 
 	result, replacements = replacePlaceholder("name = ?", 3)
 
-	if replacements != 1 && result != "name = $3" {
+	if replacements != 1 && result != "name = $4" {
 		t.Fatalf("Expected 1 replacement, got: %d - %s", replacements, result)
 	}
 }

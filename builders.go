@@ -174,7 +174,7 @@ func replacePlaceholder(expr string, offset uint) (string, uint) {
 		right := sql[match+1:]
 
 		// This is a little more complicated because we're iterating in reverse.
-		placeholder := (len(matches) - idx - 1) + int(offset)
+		placeholder := (len(matches) - idx) + int(offset)
 
 		sql = strings.Join([]string{left, fmt.Sprintf("$%d", placeholder), right}, "")
 	}
