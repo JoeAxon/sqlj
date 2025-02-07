@@ -101,7 +101,7 @@ func (q QueryDB) Get(id any, v any) error {
 }
 
 // Get a single record from the given table.
-func (q QueryDB) One(v any, values ...any) error {
+func (q QueryDB) One(v any) error {
 	if err := checkValueType(v); err != nil {
 		return err
 	}
