@@ -162,7 +162,7 @@ func (q QueryDB) Count() (uint, error) {
 		Columns: []string{"count(1)"},
 	})
 
-	result := q.DB.DB.QueryRow(sql)
+	result := q.DB.DB.QueryRow(sql, q.WhereValues...)
 
 	if err := result.Scan(&count); err != nil {
 		return 0, err
