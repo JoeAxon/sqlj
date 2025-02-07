@@ -336,7 +336,7 @@ func TestFrom(t *testing.T) {
 	}
 
 	var foundUserB User
-	if err := jdb.From("user").Where("name = ?").One(&foundUserB, userB.Name); err != nil {
+	if err := jdb.From("user").Where("name = ?", userB.Name).One(&foundUserB); err != nil {
 		t.Fatalf("Fluent API, failed to get user: %s\n", err.Error())
 	}
 

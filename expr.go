@@ -7,6 +7,7 @@ type QueryDB struct {
 	From         string
 	OrderClauses []OrderBy
 	WhereClauses []WhereClause
+	WhereValues  []any
 }
 
 const (
@@ -39,28 +40,32 @@ func (e NestedExpr) String() string {
 	return parens(joinWhereClauses(e.exprs))
 }
 
-func (q QueryDB) Where(expr string) QueryDB {
-	return q.WhereExpr(SimpleExpr{expr})
+func (q QueryDB) Where(expr string, values ...any) QueryDB {
+	return q.WhereExpr(SimpleExpr{expr}, values...)
 }
 
-func (q QueryDB) WhereExpr(expr Expr) QueryDB {
+func (q QueryDB) WhereExpr(expr Expr, values ...any) QueryDB {
 	q.WhereClauses = append(q.WhereClauses, WhereClause{
 		Type: AND_TYPE,
 		Expr: expr,
 	})
 
+	q.WhereValues = append(q.WhereValues, values...)
+
 	return q
 }
 
-func (q QueryDB) OrWhere(expr string) QueryDB {
+func (q QueryDB) OrWhere(expr string, values ...any) QueryDB {
 	return q.OrWhereExpr(SimpleExpr{expr})
 }
 
-func (q QueryDB) OrWhereExpr(expr Expr) QueryDB {
+func (q QueryDB) OrWhereExpr(expr Expr, values ...any) QueryDB {
 	q.WhereClauses = append(q.WhereClauses, WhereClause{
 		Type: OR_TYPE,
 		Expr: expr,
 	})
+
+	q.WhereValues = append(q.WhereValues, values...)
 
 	return q
 }
@@ -110,7 +115,7 @@ func (q QueryDB) One(v any, values ...any) error {
 		Where:   q.WhereClauses,
 	})
 
-	return q.DB.GetRow(sql, v, values...)
+	return q.DB.GetRow(sql, v, q.WhereValues...)
 }
 
 func (q QueryDB) Select(v any, values ...any) error {
