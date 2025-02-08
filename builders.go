@@ -115,12 +115,12 @@ func buildSelectQuery(options Select) string {
 	}
 
 	if options.Limit {
-		sql = strings.Join([]string{sql, " LIMIT ", fmt.Sprintf("$%d", placeholderOffset)}, "")
+		sql = strings.Join([]string{sql, " LIMIT ", fmt.Sprintf("$%d", placeholderOffset+1)}, "")
 		placeholderOffset++
 	}
 
 	if options.Offset {
-		sql = strings.Join([]string{sql, " OFFSET ", fmt.Sprintf("$%d", placeholderOffset)}, "")
+		sql = strings.Join([]string{sql, " OFFSET ", fmt.Sprintf("$%d", placeholderOffset+1)}, "")
 		placeholderOffset++
 	}
 

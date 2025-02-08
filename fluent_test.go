@@ -119,6 +119,7 @@ func TestPage(t *testing.T) {
 
 	db.Exec(`
     INSERT INTO user (name, email, created_at) VALUES
+      ('Adam', 'adam@example.com', date()),
       ('Jess', 'jess@example.com', date()),
       ('Joe', 'joe@example.com', date()),
       ('Jane', 'jane@example.com', date()),
@@ -143,7 +144,7 @@ func TestPage(t *testing.T) {
 		SkipOnInsert: []string{"id"},
 	}
 
-	userQuery := jdb.From("user")
+	userQuery := jdb.From("user").Where("name <> ?", "Adam")
 
 	options := PageOptions{
 		PageNumber: 1,
