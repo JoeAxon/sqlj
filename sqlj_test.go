@@ -282,3 +282,74 @@ func TestInsertWithOptions(t *testing.T) {
 		t.Fatalf("Failed to retrieve user: %s\n", err.Error())
 	}
 }
+
+type Issue struct {
+	ID         uint    `db:"id"`
+	Title      string  `db:"title"`
+	AssignedTo *string `db:"assigned_to"`
+}
+
+func TestNullableFields(t *testing.T) {
+	db, err := sql.Open("sqlite3", ":memory:")
+
+	defer db.Close()
+
+	db.Exec("CREATE TABLE issues (id integer primary key, title text, assigned_to text)")
+
+	if err != nil {
+		t.Fatalf("Failed to open db: %s\n", err.Error())
+	}
+
+	jdb := DB{
+		DB:           db,
+		SkipOnInsert: []string{"id"},
+	}
+
+	issueA := Issue{
+		Title:      "A first issue",
+		AssignedTo: nil,
+	}
+
+	issueB := Issue{
+		Title:      "A second issue",
+		AssignedTo: nil,
+	}
+
+	if err := jdb.Insert("issues", &issueA); err != nil {
+		t.Fatalf("Failed to insert issue: %s\n", err.Error())
+	}
+
+	if err := jdb.Insert("issues", &issueB); err != nil {
+		t.Fatalf("Failed to insert issue: %s\n", err.Error())
+	}
+
+	assignee := "Joe"
+
+	issueA.AssignedTo = &assignee
+
+	if err := jdb.Update("issues", issueA.ID, &issueA); err != nil {
+		t.Fatalf("Failed to updated issue: %s\n", err.Error())
+	}
+
+	issueQuery := jdb.From("issues")
+
+	var foundIssue Issue
+
+	if err := issueQuery.Get(issueA.ID, &foundIssue); err != nil {
+		t.Fatalf("Failed to get issue by ID: %s\n", err.Error())
+	}
+
+	if foundIssue.Title != issueA.Title {
+		t.Fatalf("Title mismatch, expected: %s, got: %s\n", issueA.Title, foundIssue.Title)
+	}
+
+	var allIssues []Issue
+
+	if err := issueQuery.All(&allIssues); err != nil {
+		t.Fatalf("Failed to get all issues: %s\n", err.Error())
+	}
+
+	if len(allIssues) != 2 {
+		t.Fatalf("Expected to get 2 issues. Got: %d issue(s)\n", len(allIssues))
+	}
+}
