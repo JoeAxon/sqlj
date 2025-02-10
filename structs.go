@@ -7,14 +7,23 @@ import (
 )
 
 func scanIntoStruct(row *sql.Row, dest any) error {
+	t := reflect.TypeOf(dest)
 	val := reflect.ValueOf(dest)
 
 	columns := make([]interface{}, val.Elem().NumField())
+	n := 0
 	for i := 0; i < val.Elem().NumField(); i++ {
-		columns[i] = val.Elem().Field(i).Addr().Interface()
+		dbTag := t.Elem().Field(i).Tag.Get("db")
+
+		if dbTag == "" || dbTag == "-" {
+			continue
+		}
+
+		columns[n] = val.Elem().Field(i).Addr().Interface()
+		n++
 	}
 
-	return row.Scan(columns...)
+	return row.Scan(columns[:n]...)
 }
 
 func scanRowsIntoStructs(rows *sql.Rows, dest interface{}) error {
@@ -28,20 +37,33 @@ func scanRowsIntoStructs(rows *sql.Rows, dest interface{}) error {
 		return errors.New("dest must be a pointer to a slice of structs")
 	}
 
-	columns, err := rows.Columns()
-	if err != nil {
-		return err
-	}
+	/*
+	  // It might be better to use .FieldByName in the future
+		columns, err := rows.Columns()
+		if err != nil {
+			return err
+		}
+	*/
+
+	structInstance := reflect.New(structType).Interface()
+	v := reflect.ValueOf(structInstance)
+	t := reflect.TypeOf(structInstance)
 
 	for rows.Next() {
-		structInstance := reflect.New(structType).Interface()
+		fieldPointers := make([]interface{}, v.Elem().NumField())
+		n := 0
+		for i := 0; i < v.Elem().NumField(); i++ {
+			dbTag := t.Elem().Field(i).Tag.Get("db")
 
-		fieldPointers := make([]interface{}, len(columns))
-		for i := 0; i < len(columns); i++ {
-			fieldPointers[i] = reflect.ValueOf(structInstance).Elem().Field(i).Addr().Interface()
+			if dbTag == "" || dbTag == "-" {
+				continue
+			}
+
+			fieldPointers[n] = v.Elem().Field(i).Addr().Interface()
+			n++
 		}
 
-		if err := rows.Scan(fieldPointers...); err != nil {
+		if err := rows.Scan(fieldPointers[:n]...); err != nil {
 			return err
 		}
 

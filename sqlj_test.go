@@ -128,6 +128,7 @@ type Employee struct {
 	Email     string `db:"email"`
 	Location  string `db:"location"`
 	Age       uint   `db:"age"`
+	UserID    *uint  `db:"user_id"`
 }
 
 type EmailAndLocation struct {
@@ -145,7 +146,7 @@ func TestPartialRetrieval(t *testing.T) {
 
 	defer db.Close()
 
-	db.Exec("CREATE TABLE employee (id integer primary key, first_name text, last_name text, email text, location text, age integer)")
+	db.Exec("CREATE TABLE employee (id integer primary key, first_name text, last_name text, email text, location text, age integer, user_id integer)")
 
 	if err != nil {
 		t.Fatalf("Failed to open db: %s\n", err.Error())
@@ -311,7 +312,8 @@ func TestInsertWithOptions(t *testing.T) {
 type Issue struct {
 	ID         uint   `db:"id"`
 	Title      string `db:"title"`
-	AssignedTo *uint  `db:"assigned_to"`
+	NotInDB    string
+	AssignedTo *uint `db:"assigned_to"`
 }
 
 func TestNullableFields(t *testing.T) {

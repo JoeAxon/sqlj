@@ -1,8 +1,6 @@
 package sqlj
 
-import (
-	"errors"
-)
+import "errors"
 
 type QueryDB struct {
 	DB           *DB
