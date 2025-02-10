@@ -2,9 +2,14 @@ package sqlj
 
 import (
 	"database/sql"
+	"log"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/joho/godotenv"
+
+	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -13,6 +18,26 @@ type User struct {
 	Name      string    `db:"name"`
 	Email     string    `db:"email"`
 	CreatedAt time.Time `db:"created_at"`
+}
+
+var pgDB *sql.DB
+
+func TestMain(m *testing.M) {
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("No .env file found")
+	}
+
+	var err error
+	pgDB, err = sql.Open("postgres", os.Getenv("PG_DSN"))
+
+	if err != nil {
+		log.Fatalf("Failed to open pg db: ")
+	}
+
+	defer pgDB.Close()
+
+	m.Run()
+
 }
 
 func TestInsertAndRetrieve(t *testing.T) {
@@ -284,24 +309,24 @@ func TestInsertWithOptions(t *testing.T) {
 }
 
 type Issue struct {
-	ID         uint    `db:"id"`
-	Title      string  `db:"title"`
-	AssignedTo *string `db:"assigned_to"`
+	ID         uint   `db:"id"`
+	Title      string `db:"title"`
+	AssignedTo *uint  `db:"assigned_to"`
 }
 
 func TestNullableFields(t *testing.T) {
-	db, err := sql.Open("sqlite3", ":memory:")
-
-	defer db.Close()
-
-	db.Exec("CREATE TABLE issues (id integer primary key, title text, assigned_to text)")
-
-	if err != nil {
-		t.Fatalf("Failed to open db: %s\n", err.Error())
+	if _, err := pgDB.Exec("CREATE TABLE issues (id serial primary key, title text, assigned_to integer)"); err != nil {
+		t.Fatalf("Failed to set-up postgres DB: %s\n", err.Error())
 	}
 
+	t.Cleanup(func() {
+		if _, err := pgDB.Exec("DROP TABLE issues"); err != nil {
+			t.Logf("Cleanup - Failed to remove pg issues table: %s\n", err.Error())
+		}
+	})
+
 	jdb := DB{
-		DB:           db,
+		DB:           pgDB,
 		SkipOnInsert: []string{"id"},
 	}
 
@@ -323,7 +348,7 @@ func TestNullableFields(t *testing.T) {
 		t.Fatalf("Failed to insert issue: %s\n", err.Error())
 	}
 
-	assignee := "Joe"
+	assignee := uint(1)
 
 	issueA.AssignedTo = &assignee
 

@@ -36,7 +36,7 @@ func buildInsertSQL(options Insert) string {
 	n := 0
 	for idx, f := range options.Fields {
 		names[idx] = f.GetName()
-		placeholders[idx] = f.GetPlaceholder(n)
+		placeholders[idx] = f.GetPlaceholder(n + 1)
 
 		if !f.IsLiteral() {
 			n++
@@ -67,7 +67,7 @@ type Update struct {
 func buildUpdateSQL(options Update) string {
 	setExpressions := make([]string, len(options.Fields))
 	for idx, f := range options.Fields {
-		setExpressions[idx] = fmt.Sprintf("%s = %s", f.GetName(), f.GetPlaceholder(idx))
+		setExpressions[idx] = fmt.Sprintf("%s = %s", f.GetName(), f.GetPlaceholder(idx+1))
 	}
 
 	return strings.Join(
@@ -76,7 +76,7 @@ func buildUpdateSQL(options Update) string {
 			options.From,
 			" SET ",
 			strings.Join(setExpressions, ", "),
-			fmt.Sprintf(" WHERE id = $%d ", len(options.Fields)),
+			fmt.Sprintf(" WHERE id = $%d ", len(options.Fields)+1),
 			"RETURNING ",
 			strings.Join(options.Returning, ", "),
 		},
