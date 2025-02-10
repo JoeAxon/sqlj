@@ -377,4 +377,16 @@ func TestNullableFields(t *testing.T) {
 	if len(allIssues) != 2 {
 		t.Fatalf("Expected to get 2 issues. Got: %d issue(s)\n", len(allIssues))
 	}
+
+	var pageOne []Issue
+
+	if err := issueQuery.Page(PageOptions{
+		PageNumber: 1,
+		PageSize:   10,
+		Order: []OrderBy{
+			{"title", "ASC"},
+		},
+	}, &pageOne); err != nil {
+		t.Fatalf("Failed to page issues: %s\n", err.Error())
+	}
 }
