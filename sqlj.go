@@ -22,6 +22,33 @@ type Options struct {
 	Fields []Field
 }
 
+func NewDB(db DBLike) DB {
+	return DB{
+		DB:           db,
+		SkipOnInsert: []string{"id"},
+	}
+}
+
+func Open(driver string, dsn string) (*DB, error) {
+	db, err := sql.Open(driver, dsn)
+
+	if err != nil {
+		return nil, err
+	}
+
+	jdb := NewDB(db)
+
+	return &jdb, nil
+}
+
+func (jdb *DB) Close() {
+	db, ok := jdb.DB.(*sql.DB)
+
+	if ok {
+		db.Close()
+	}
+}
+
 // Gets a single row from the given table with the given id.
 // v must be a pointer to a struct.
 func (jdb *DB) Get(table string, id any, v any) error {

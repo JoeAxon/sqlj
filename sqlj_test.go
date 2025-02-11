@@ -37,7 +37,28 @@ func TestMain(m *testing.M) {
 	defer pgDB.Close()
 
 	m.Run()
+}
 
+func TestOpenAndClose(t *testing.T) {
+	jdb, err := Open("sqlite3", ":memory:")
+
+	if err != nil {
+		t.Fatalf("Failed to open DB: %s\n", err.Error())
+	}
+
+	defer jdb.Close()
+
+	row := jdb.DB.QueryRow("SELECT 1")
+
+	var val uint
+
+	if err := row.Scan(&val); err != nil {
+		t.Fatalf("Failed to scan val: %s\n", err.Error())
+	}
+
+	if val != 1 {
+		t.Fatalf("Expected value to be 1, got: %d\n", val)
+	}
 }
 
 func TestInsertAndRetrieve(t *testing.T) {
@@ -53,10 +74,7 @@ func TestInsertAndRetrieve(t *testing.T) {
 	userA := User{Name: "Joe", Email: "joe@example.com"}
 	userB := User{Name: "Jen", Email: "jen@example.com"}
 
-	jdb := DB{
-		DB:           db,
-		SkipOnInsert: []string{"id"},
-	}
+	jdb := NewDB(db)
 
 	if err := jdb.Insert("user", &userA); err != nil {
 		t.Fatalf("Failed to insert user: %s\n", err.Error())
@@ -152,10 +170,7 @@ func TestPartialRetrieval(t *testing.T) {
 		t.Fatalf("Failed to open db: %s\n", err.Error())
 	}
 
-	jdb := DB{
-		DB:           db,
-		SkipOnInsert: []string{"id"},
-	}
+	jdb := NewDB(db)
 
 	employeeA := Employee{
 		FirstName: "Joe",
@@ -222,10 +237,7 @@ func TestTransaction(t *testing.T) {
 		t.Fatalf("Failed to start transaction: %s\n", err.Error())
 	}
 
-	jdb := DB{
-		DB:           tx,
-		SkipOnInsert: []string{"id"},
-	}
+	jdb := NewDB(tx)
 
 	user := User{
 		Name:  "Jess",
@@ -262,10 +274,7 @@ func TestInsertWithOptions(t *testing.T) {
 		t.Fatalf("Failed to open db: %s\n", err.Error())
 	}
 
-	jdb := DB{
-		DB:           db,
-		SkipOnInsert: []string{"id"},
-	}
+	jdb := NewDB(db)
 
 	user := User{
 		Name:  "Jess",
@@ -327,10 +336,7 @@ func TestNullableFields(t *testing.T) {
 		}
 	})
 
-	jdb := DB{
-		DB:           pgDB,
-		SkipOnInsert: []string{"id"},
-	}
+	jdb := NewDB(pgDB)
 
 	issueA := Issue{
 		Title:      "A first issue",
