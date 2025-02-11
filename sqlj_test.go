@@ -358,7 +358,7 @@ func TestNullableFields(t *testing.T) {
 		t.Fatalf("Failed to updated issue: %s\n", err.Error())
 	}
 
-	issueQuery := jdb.From("issues")
+	issueQuery := jdb.From("issues").Order("title", "ASC")
 
 	var foundIssue Issue
 
@@ -382,13 +382,7 @@ func TestNullableFields(t *testing.T) {
 
 	var pageOne []Issue
 
-	if err := issueQuery.Page(PageOptions{
-		PageNumber: 1,
-		PageSize:   10,
-		Order: []OrderBy{
-			{"title", "ASC"},
-		},
-	}, &pageOne); err != nil {
+	if err := issueQuery.Page(1, 10, &pageOne); err != nil {
 		t.Fatalf("Failed to page issues: %s\n", err.Error())
 	}
 }

@@ -144,15 +144,7 @@ func TestPage(t *testing.T) {
 		SkipOnInsert: []string{"id"},
 	}
 
-	userQuery := jdb.From("user").Where("name <> ?", "Adam")
-
-	options := PageOptions{
-		PageNumber: 1,
-		PageSize:   10,
-		Order: []OrderBy{
-			{"name", "ASC"},
-		},
-	}
+	userQuery := jdb.From("user").Where("name <> ?", "Adam").Order("name", "ASC")
 
 	total, err := userQuery.Count()
 
@@ -166,7 +158,7 @@ func TestPage(t *testing.T) {
 
 	var firstPage []User
 
-	if err := userQuery.Page(options, &firstPage); err != nil {
+	if err := userQuery.Page(1, 10, &firstPage); err != nil {
 		t.Fatalf("Failed to get first page of users: %s\n", err.Error())
 	}
 
@@ -178,11 +170,9 @@ func TestPage(t *testing.T) {
 		t.Fatalf("Expected first user to be 'Jafar', got: %s\n", firstPage[0].Name)
 	}
 
-	options.PageNumber += 1
-
 	var secondPage []User
 
-	if err := userQuery.Page(options, &secondPage); err != nil {
+	if err := userQuery.Page(2, 10, &secondPage); err != nil {
 		t.Fatalf("Failed to get second page of users: %s\n", err.Error())
 	}
 

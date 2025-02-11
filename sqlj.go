@@ -32,7 +32,7 @@ func (jdb *DB) Get(table string, id any, v any) error {
 	fields := extractFields(v)
 	columns := pluckNames(fields)
 
-	sql := buildSelectQuery(Select{
+	sql := buildSelectQuery(selectParams{
 		Columns: columns,
 		From:    table,
 		Where: []WhereClause{
@@ -64,7 +64,7 @@ func (jdb *DB) Select(table string, v any) error {
 	fields := extractFields(structInstance)
 	columns := pluckNames(fields)
 
-	sql := buildSelectQuery(Select{
+	sql := buildSelectQuery(selectParams{
 		Columns: columns,
 		From:    table,
 	})
@@ -108,7 +108,7 @@ func (jdb *DB) InsertWithOptions(table string, options Options, v any) error {
 	filteredFields := filterFields(fields, jdb.SkipOnInsert)
 	returnColumns := pluckNames(allFields)
 
-	sql := buildInsertSQL(Insert{
+	sql := buildInsertSQL(insertParams{
 		From:      table,
 		Fields:    filteredFields,
 		Returning: returnColumns,
@@ -142,7 +142,7 @@ func (jdb *DB) UpdateWithOptions(table string, id any, options Options, v any) e
 	filteredFields := filterFields(fields, jdb.SkipOnInsert)
 	returnColumns := pluckNames(allFields)
 
-	sql := buildUpdateSQL(Update{
+	sql := buildUpdateSQL(updateParams{
 		From:      table,
 		Fields:    filteredFields,
 		Returning: returnColumns,
@@ -156,7 +156,7 @@ func (jdb *DB) UpdateWithOptions(table string, id any, options Options, v any) e
 
 // Deletes a row in the given table by ID.
 func (jdb *DB) Delete(table string, id any) error {
-	sql := buildDeleteSQL(Delete{
+	sql := buildDeleteSQL(deleteParams{
 		From: table,
 		Where: []WhereClause{
 			{AND_TYPE, SimpleExpr{columnEq(jdb.getIDName())}},

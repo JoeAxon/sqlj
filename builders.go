@@ -6,12 +6,12 @@ import (
 	"strings"
 )
 
-type Delete struct {
+type deleteParams struct {
 	From  string
 	Where []WhereClause
 }
 
-func buildDeleteSQL(options Delete) string {
+func buildDeleteSQL(options deleteParams) string {
 	sql := strings.Join([]string{"DELETE FROM ", options.From}, "")
 
 	if len(options.Where) > 0 {
@@ -23,13 +23,13 @@ func buildDeleteSQL(options Delete) string {
 	return sql
 }
 
-type Insert struct {
+type insertParams struct {
 	From      string
 	Fields    []Field
 	Returning []string
 }
 
-func buildInsertSQL(options Insert) string {
+func buildInsertSQL(options insertParams) string {
 	names := make([]string, len(options.Fields))
 	placeholders := make([]string, len(options.Fields))
 
@@ -58,13 +58,13 @@ func buildInsertSQL(options Insert) string {
 	)
 }
 
-type Update struct {
+type updateParams struct {
 	From      string
 	Fields    []Field
 	Returning []string
 }
 
-func buildUpdateSQL(options Update) string {
+func buildUpdateSQL(options updateParams) string {
 	setExpressions := make([]string, len(options.Fields))
 	for idx, f := range options.Fields {
 		setExpressions[idx] = fmt.Sprintf("%s = %s", f.GetName(), f.GetPlaceholder(idx+1))
@@ -84,16 +84,21 @@ func buildUpdateSQL(options Update) string {
 	)
 }
 
-type Select struct {
+type selectParams struct {
 	From    string
 	Where   []WhereClause
-	OrderBy []OrderBy
+	OrderBy []orderBy
 	Offset  bool
 	Limit   bool
 	Columns []string
 }
 
-func buildSelectQuery(options Select) string {
+type orderBy struct {
+	Expression string
+	Direction  string
+}
+
+func buildSelectQuery(options selectParams) string {
 	sql := strings.Join([]string{"SELECT ", strings.Join(options.Columns, ", "), " FROM ", options.From}, "")
 
 	var placeholderOffset uint = 0

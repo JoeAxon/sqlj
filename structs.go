@@ -37,14 +37,6 @@ func scanRowsIntoStructs(rows *sql.Rows, dest interface{}) error {
 		return errors.New("dest must be a pointer to a slice of structs")
 	}
 
-	/*
-	  // It might be better to use .FieldByName in the future
-		columns, err := rows.Columns()
-		if err != nil {
-			return err
-		}
-	*/
-
 	structInstance := reflect.New(structType).Interface()
 	v := reflect.ValueOf(structInstance)
 	t := reflect.TypeOf(structInstance)

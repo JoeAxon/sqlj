@@ -5,7 +5,7 @@ import "errors"
 type QueryDB struct {
 	DB           *DB
 	From         string
-	OrderClauses []OrderBy
+	OrderClauses []orderBy
 	WhereClauses []WhereClause
 	WhereValues  []any
 }
@@ -41,7 +41,7 @@ func (q QueryDB) OrWhereExpr(expr Expr, values ...any) QueryDB {
 }
 
 func (q QueryDB) Order(expression string, direction string) QueryDB {
-	q.OrderClauses = append(q.OrderClauses, OrderBy{
+	q.OrderClauses = append(q.OrderClauses, orderBy{
 		Expression: expression,
 		Direction:  direction,
 	})
@@ -59,7 +59,7 @@ func (q QueryDB) Get(id any, v any) error {
 	fields := extractFields(v)
 	columns := pluckNames(fields)
 
-	sql := buildSelectQuery(Select{
+	sql := buildSelectQuery(selectParams{
 		Columns: columns,
 		From:    q.From,
 		Where: []WhereClause{
@@ -79,7 +79,7 @@ func (q QueryDB) One(v any) error {
 	fields := extractFields(v)
 	columns := pluckNames(fields)
 
-	sql := buildSelectQuery(Select{
+	sql := buildSelectQuery(selectParams{
 		Columns: columns,
 		From:    q.From,
 		Where:   q.WhereClauses,
@@ -88,6 +88,9 @@ func (q QueryDB) One(v any) error {
 	return q.DB.GetRow(sql, v, q.WhereValues...)
 }
 
+// Select all data from the query object.
+// The results will be marshalled into the v slice of structs.
+// v must be a pointer to a slice of structs.
 func (q QueryDB) All(v any) error {
 	structInstance, err := getSliceStructInstance(v)
 	if err != nil {
@@ -97,7 +100,7 @@ func (q QueryDB) All(v any) error {
 	fields := extractFields(structInstance)
 	columns := pluckNames(fields)
 
-	sql := buildSelectQuery(Select{
+	sql := buildSelectQuery(selectParams{
 		From:    q.From,
 		Where:   q.WhereClauses,
 		OrderBy: q.OrderClauses,
@@ -108,20 +111,16 @@ func (q QueryDB) All(v any) error {
 }
 
 // Selects a page of data from the given table.
-// The options parameter allows you to specify the page, page size and order by clauses.
+// The options parameter allows you to specify the page and page size.
 // The results will be marshalled into the v slice of structs.
 // v must be a pointer to a slice of structs.
-func (q QueryDB) Page(options PageOptions, v any) error {
-	if options.PageNumber < 1 {
+func (q QueryDB) Page(page uint, pageSize uint, v any) error {
+	if page < 1 {
 		return errors.New("Page number must be greater than 0")
 	}
 
-	if options.PageSize < 1 {
+	if pageSize < 1 {
 		return errors.New("Page size must be greater than 0")
-	}
-
-	if len(options.Order) == 0 {
-		return errors.New("Must include atleast one order by")
 	}
 
 	structInstance, err := getSliceStructInstance(v)
@@ -132,13 +131,13 @@ func (q QueryDB) Page(options PageOptions, v any) error {
 	fields := extractFields(structInstance)
 	columns := pluckNames(fields)
 
-	offset := (options.PageNumber - 1) * options.PageSize
-	limit := options.PageSize
+	offset := (page - 1) * pageSize
+	limit := pageSize
 
-	sql := buildSelectQuery(Select{
+	sql := buildSelectQuery(selectParams{
 		From:    q.From,
 		Where:   q.WhereClauses,
-		OrderBy: options.Order,
+		OrderBy: q.OrderClauses,
 		Columns: columns,
 		Offset:  true,
 		Limit:   true,
@@ -154,7 +153,7 @@ func (q QueryDB) Page(options PageOptions, v any) error {
 func (q QueryDB) Count() (uint, error) {
 	var count uint = 0
 
-	sql := buildSelectQuery(Select{
+	sql := buildSelectQuery(selectParams{
 		From:    q.From,
 		Where:   q.WhereClauses,
 		Columns: []string{"count(1)"},
