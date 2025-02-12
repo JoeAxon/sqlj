@@ -24,7 +24,7 @@ The simplest way to get started with sqlj is to provide the `Open` function with
 package main
 
 import (
-    "fmt"
+	"fmt"
 	"database/sql"
 
 	_ "github.com/mattn/go-sqlite3"
