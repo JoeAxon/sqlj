@@ -42,7 +42,7 @@ func main() {
 }
 ```
 
-The `NewDB` function can also be to set-up sqlj. This accepts any struct that implements the `DBLike` interface. This is useful if you need to open the connection to the DB separately using the standard library database/sql package or if you are working with transactions.
+The `NewDB` function can also be used to set-up sqlj. This accepts any struct that implements the `DBLike` interface. This is useful if you need to open the connection to the DB separately using the standard library database/sql package or if you are working with transactions.
 
 You can also initialise the `sqlj.DB` manually if you find it useful to do so. I don't think it is necessary to do but I also don't intend to make it problematic if you do.
 
@@ -83,7 +83,7 @@ func main() {
 
 You can get a little more control over the generated SQL by using the `InsertWithOptions` and `UpdateWithOptions` methods. A real world example might be setting the `updated_at` field on a record to the current timestamp:
 
-```
+```go
 	if err := db.UpdateWithOptions("users", sqlj.Options{
 		Fields: []sqlj.Field{
 			sqlj.LiteralField{
@@ -102,7 +102,7 @@ This is an area likely to change in the future. Whilst it works it isn't particu
 
 The DB struct exposes the `GetRow` and `SelectAll` functions to allow you to marshall the results of arbitrary SQL into a struct or slice of structs respectively. It also exposes the `Get` function for retrieving a record by ID and, less usefully, the `Select` function to retrieve all records from a table.
 
-```
+```go
 	var user User
 
 	// The .Get function is equivalent to the .GetRow call below
@@ -130,7 +130,7 @@ The DB struct exposes the `GetRow` and `SelectAll` functions to allow you to mar
 
 There is an ergonomic API for writing queries that should hopefully suffice in most cases. Fluent interfaces get a bad rap but I believe this is a valid usecase and not too egregious:
 
-```
+```go
 	var user User
 
 	// .From returns a QueryDB struct which allows you to chain .Where,
