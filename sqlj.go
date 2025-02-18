@@ -19,10 +19,6 @@ type DBLike interface {
 	QueryRow(query string, args ...any) *sql.Row
 }
 
-type Options struct {
-	Fields []Field
-}
-
 func NewDB(db DBLike) DB {
 	return DB{
 		DB:           db,
@@ -162,7 +158,7 @@ func (jdb *DB) Update(table string, id any, v any) error {
 
 // Updates a row in the specified `table` using the given struct.
 // The updated row is returned and marshalled into v.
-// An Options type with a slice of Fields can be included to override any values in v.
+// A map of column to literal string value can be included to override any values in v.
 // v must be a pointer to a struct.
 func (jdb *DB) UpdateWithFields(table string, id any, v any, fieldMap map[string]string) error {
 	if err := checkValueType(v); err != nil {
