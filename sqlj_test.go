@@ -263,7 +263,7 @@ func TestTransaction(t *testing.T) {
 	}
 }
 
-func TestInsertWithOptions(t *testing.T) {
+func TestInsertWithFields(t *testing.T) {
 	db, err := sql.Open("sqlite3", ":memory:")
 
 	defer db.Close()
@@ -281,14 +281,9 @@ func TestInsertWithOptions(t *testing.T) {
 		Email: "jess@example.com",
 	}
 
-	if err := jdb.InsertWithOptions("user", Options{
-		Fields: []Field{
-			BasicField{
-				Name:  "name",
-				Value: "Jon",
-			},
-		},
-	}, &user); err != nil {
+	// This is probably a good example of what not to do
+	// anything that isn't a literal value should come from v struct
+	if err := jdb.InsertWithFields("user", &user, map[string]string{"name": "'Jon'"}); err != nil {
 		t.Fatalf("Failed to insert user: %s\n", err.Error())
 	}
 
@@ -302,14 +297,7 @@ func TestInsertWithOptions(t *testing.T) {
 		t.Fatalf("Failed to retrieve user: %s\n", err.Error())
 	}
 
-	if err := jdb.InsertWithOptions("user", Options{
-		Fields: []Field{
-			LiteralField{
-				Name:  "created_at",
-				Value: "date()",
-			},
-		},
-	}, &user); err != nil {
+	if err := jdb.InsertWithFields("user", &user, map[string]string{"created_at": "date()"}); err != nil {
 		t.Fatalf("Failed to insert user: %s\n", err.Error())
 	}
 

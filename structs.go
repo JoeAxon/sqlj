@@ -65,6 +65,18 @@ func scanRowsIntoStructs(rows *sql.Rows, dest interface{}) error {
 	return rows.Err()
 }
 
+func literalFieldsFromMap(fieldMap map[string]string) []Field {
+	fields := make([]Field, len(fieldMap))
+
+	idx := 0
+	for k, v := range fieldMap {
+		fields[idx] = LiteralField{Name: k, Value: v}
+		idx++
+	}
+
+	return fields
+}
+
 func extractFields(v any) []Field {
 	t := reflect.TypeOf(v)
 

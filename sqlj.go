@@ -2,6 +2,7 @@ package sqlj
 
 import (
 	"database/sql"
+	"fmt"
 )
 
 type DB struct {
@@ -116,20 +117,21 @@ func (jdb *DB) SelectAll(sql string, v any, values ...any) error {
 // The new row is returned and marshalled into v.
 // v must be a pointer to a struct.
 func (jdb *DB) Insert(table string, v any) error {
-	return jdb.InsertWithOptions(table, Options{}, v)
+	return jdb.InsertWithFields(table, v, map[string]string{})
 }
 
 // Inserts a row into the specified `table` with the given struct.
 // The new row is returned and marshalled into v.
-// An Options type with a slice of Fields can be included to override any values in v.
+// A map of column to literal string value can be included to override any values in v.
 // v must be a pointer to a struct.
-func (jdb *DB) InsertWithOptions(table string, options Options, v any) error {
+func (jdb *DB) InsertWithFields(table string, v any, fieldMap map[string]string) error {
 	if err := checkValueType(v); err != nil {
 		return err
 	}
 
 	allFields := extractFields(v)
-	fields := append(allFields, options.Fields...)
+	literalFields := literalFieldsFromMap(fieldMap)
+	fields := append(allFields, literalFields...)
 	fields = dedupeFields(fields)
 
 	filteredFields := filterFields(fields, jdb.SkipOnInsert)
@@ -141,6 +143,11 @@ func (jdb *DB) InsertWithOptions(table string, options Options, v any) error {
 		Returning: returnColumns,
 	})
 
+	if len(fieldMap) > 0 {
+		fmt.Printf("Fields: %v\n", fields)
+		fmt.Printf("Insert with fields SQL: %s\n", sql)
+	}
+
 	values := pluckValues(filteredFields)
 
 	return jdb.GetRow(sql, v, values...)
@@ -150,20 +157,21 @@ func (jdb *DB) InsertWithOptions(table string, options Options, v any) error {
 // The updated row is returned and marshalled into v.
 // v must be a pointer to a struct.
 func (jdb *DB) Update(table string, id any, v any) error {
-	return jdb.UpdateWithOptions(table, id, Options{}, v)
+	return jdb.UpdateWithFields(table, id, v, map[string]string{})
 }
 
 // Updates a row in the specified `table` using the given struct.
 // The updated row is returned and marshalled into v.
 // An Options type with a slice of Fields can be included to override any values in v.
 // v must be a pointer to a struct.
-func (jdb *DB) UpdateWithOptions(table string, id any, options Options, v any) error {
+func (jdb *DB) UpdateWithFields(table string, id any, v any, fieldMap map[string]string) error {
 	if err := checkValueType(v); err != nil {
 		return err
 	}
 
 	allFields := extractFields(v)
-	fields := append(allFields, options.Fields...)
+	literalFields := literalFieldsFromMap(fieldMap)
+	fields := append(allFields, literalFields...)
 	fields = dedupeFields(fields)
 
 	filteredFields := filterFields(fields, jdb.SkipOnInsert)

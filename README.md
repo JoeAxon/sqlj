@@ -81,22 +81,16 @@ func main() {
 }
 ```
 
-You can get a little more control over the generated SQL by using the `InsertWithOptions` and `UpdateWithOptions` methods. A real world example might be setting the `updated_at` field on a record to the current timestamp:
+You can get a little more control over the generated SQL by using the `InsertWithFields` and `UpdateWithFields` methods. A real world example might be setting the `updated_at` field on a record to the current timestamp:
 
 ```go
-	if err := db.UpdateWithOptions("users", sqlj.Options{
-		Fields: []sqlj.Field{
-			sqlj.LiteralField{
-				Name:  "updated_at",
-				Value: "date()",
-			},
-		},
-	}, &user); err != nil {
+	// The map keys should match a column in the table and the key a literal value.
+	// The keys and values are simply interpolated into the "UPDATE" query so be careful
+	// when passing dynamic strings to this method not to introduce an opportunity for SQL injection.
+	if err := db.UpdateWithFields("users", &user, map[string]string{"updated_at": "date()"}); err != nil {
 		t.Fatalf("Failed to update user: %s\n", err.Error())
 	}
 ```
-
-This is an area likely to change in the future. Whilst it works it isn't particularly pleasant to look at and does not spark joy!
 
 ### Retrieving records
 
