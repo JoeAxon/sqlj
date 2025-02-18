@@ -25,7 +25,7 @@ func buildDeleteSQL(options deleteParams) string {
 
 type insertParams struct {
 	From      string
-	Fields    []Field
+	Fields    []field
 	Returning []string
 }
 
@@ -60,7 +60,7 @@ func buildInsertSQL(options insertParams) string {
 
 type updateParams struct {
 	From      string
-	Fields    []Field
+	Fields    []field
 	Returning []string
 }
 

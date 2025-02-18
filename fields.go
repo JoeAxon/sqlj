@@ -5,7 +5,7 @@ import (
 	"slices"
 )
 
-type Field interface {
+type field interface {
 	GetName() string
 	GetValue() any
 
@@ -18,51 +18,51 @@ type Field interface {
 }
 
 // This is a standard k = v field
-type BasicField struct {
+type basicField struct {
 	Name  string
 	Value any
 }
 
-func (f BasicField) GetName() string {
+func (f basicField) GetName() string {
 	return f.Name
 }
 
-func (f BasicField) GetValue() any {
+func (f basicField) GetValue() any {
 	return f.Value
 }
 
-func (f BasicField) GetPlaceholder(idx int) string {
+func (f basicField) GetPlaceholder(idx int) string {
 	return fmt.Sprintf("$%d", idx)
 }
 
-func (f BasicField) IsLiteral() bool {
+func (f basicField) IsLiteral() bool {
 	return false
 }
 
 // This is useful if you want to call a function.
-// An example would be LiteralField{Name: "created_at", Value: "now()"}.
-type LiteralField struct {
+// An example would be literalField{Name: "created_at", Value: "now()"}.
+type literalField struct {
 	Name  string
 	Value string
 }
 
-func (f LiteralField) GetName() string {
+func (f literalField) GetName() string {
 	return f.Name
 }
 
-func (f LiteralField) GetValue() any {
+func (f literalField) GetValue() any {
 	return nil
 }
 
-func (f LiteralField) GetPlaceholder(idx int) string {
+func (f literalField) GetPlaceholder(idx int) string {
 	return f.Value
 }
 
-func (f LiteralField) IsLiteral() bool {
+func (f literalField) IsLiteral() bool {
 	return true
 }
 
-func pluckNames(fields []Field) []string {
+func pluckNames(fields []field) []string {
 	names := make([]string, len(fields))
 
 	for idx, f := range fields {
@@ -72,7 +72,7 @@ func pluckNames(fields []Field) []string {
 	return names
 }
 
-func pluckValues(fields []Field) []any {
+func pluckValues(fields []field) []any {
 	values := make([]any, len(fields))
 
 	n := 0
@@ -87,14 +87,14 @@ func pluckValues(fields []Field) []any {
 }
 
 // TODO: Rewrite this so it's deterministic. Currently the order the fields is changed.
-func dedupeFields(fields []Field) []Field {
-	indexedFields := make(map[string]Field)
+func dedupeFields(fields []field) []field {
+	indexedFields := make(map[string]field)
 
 	for _, f := range fields {
 		indexedFields[f.GetName()] = f
 	}
 
-	allFields := make([]Field, len(indexedFields))
+	allFields := make([]field, len(indexedFields))
 
 	n := 0
 	for _, v := range indexedFields {
@@ -105,8 +105,8 @@ func dedupeFields(fields []Field) []Field {
 	return allFields
 }
 
-func filterFields(fields []Field, skipColumns []string) []Field {
-	outFields := make([]Field, len(fields))
+func filterFields(fields []field, skipColumns []string) []field {
+	outFields := make([]field, len(fields))
 
 	n := 0
 	for _, f := range fields {

@@ -65,25 +65,25 @@ func scanRowsIntoStructs(rows *sql.Rows, dest interface{}) error {
 	return rows.Err()
 }
 
-func literalFieldsFromMap(fieldMap map[string]string) []Field {
-	fields := make([]Field, len(fieldMap))
+func literalFieldsFromMap(fieldMap map[string]string) []field {
+	fields := make([]field, len(fieldMap))
 
 	idx := 0
 	for k, v := range fieldMap {
-		fields[idx] = LiteralField{Name: k, Value: v}
+		fields[idx] = literalField{Name: k, Value: v}
 		idx++
 	}
 
 	return fields
 }
 
-func extractFields(v any) []Field {
+func extractFields(v any) []field {
 	t := reflect.TypeOf(v)
 
 	number_of_fields := t.Elem().NumField()
 	value := reflect.ValueOf(v).Elem()
 
-	fields := make([]Field, number_of_fields)
+	fields := make([]field, number_of_fields)
 
 	n := 0
 	for i := 0; i < number_of_fields; i++ {
@@ -93,7 +93,7 @@ func extractFields(v any) []Field {
 			continue
 		}
 
-		fields[n] = BasicField{
+		fields[n] = basicField{
 			Name:  dbTag,
 			Value: value.Field(i).Addr().Interface(),
 		}
